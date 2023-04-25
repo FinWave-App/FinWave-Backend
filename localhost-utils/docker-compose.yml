@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15.2
+    environment:
+      POSTGRES_DB: "fintrack"
+      POSTGRES_USER: "fintrack"
+      POSTGRES_PASSWORD: "change_me"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    ports:
+      - "5432:5432"

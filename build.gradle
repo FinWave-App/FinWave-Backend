@@ -1,0 +1,137 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'nu.studer.jooq' version '8.2'
+    id 'org.flywaydb.flyway' version '9.16.3'
+}
+
+group 'su.knst.fintrack'
+
+version = '1.0.0'
+mainClassName = group + ".Main"
+archivesBaseName = 'FinTrack'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://repo1.maven.org/maven2'
+    }
+
+    // SCW
+    maven {
+        url 'https://lab.knrg.su/api/v4/projects/28/packages/maven'
+    }
+}
+
+configurations.implementation.setCanBeResolved(true)
+
+dependencies {
+    implementation 'org.reflections:reflections:0.10.2'
+
+    implementation 'org.flywaydb:flyway-core:9.16.3'
+
+    implementation 'org.jooq:jooq:3.18.3'
+    implementation 'org.jooq:jooq-codegen-maven:3.18.3'
+    implementation 'org.jooq:jooq-meta:3.18.3'
+
+    implementation 'com.google.inject:guice:5.1.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.guava:guava:31.1-jre'
+
+    implementation 'org.postgresql:postgresql:42.6.0'
+
+    jooqGenerator 'org.postgresql:postgresql:42.6.0'
+
+    implementation 'su.knst.scw:scw:0.3.1' // Config Worker
+
+    implementation 'com.sparkjava:spark-core:2.9.4'
+
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+flyway {
+    url = 'jdbc:postgresql://postgres:5432/fintrack'
+    user = 'fintrack'
+    password = 'change_me'
+    schemas = ['public']
+    driver = 'org.postgresql.Driver'
+    baselineOnMigrate = true
+    locations = ['filesystem:src/main/resources/db/migration/']
+}
+
+jooq {
+    configurations {
+        main {
+            generateSchemaSourceOnCompilation = true
+
+            generationTool {
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://postgres:5432/fintrack'
+                    user = 'fintrack'
+                    password = 'change_me'
+                    properties {
+                        property {
+                            key = 'ssl'
+                            value = 'false'
+                        }
+                    }
+                }
+                generator {
+                    name = 'org.jooq.codegen.DefaultGenerator'
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+                        forcedTypes {
+                            forcedType {
+                                name = 'varchar'
+                                includeExpression = '.*'
+                                includeTypes = 'JSONB?'
+                            }
+                            forcedType {
+                                name = 'varchar'
+                                includeExpression = '.*'
+                                includeTypes = 'INET'
+                            }
+                        }
+                    }
+                    generate {
+                        deprecated = false
+                        records = true
+                        immutablePojos = true
+                        fluentSetters = true
+                    }
+                    target {
+                        packageName = 'su.knst.fintrack.jooq'
+                        directory = 'build/generated-src/jooq/main'
+                    }
+                    strategy.name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+                }
+            }
+        }
+    }
+}
+
+tasks.getByName('generateJooq').dependsOn('flywayMigrate')
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude 'META-INF', 'META-INF/**'
+    }
+
+    manifest {
+        attributes 'Main-Class': mainClassName
+        attributes 'Implementation-Version': archiveVersion
+    }
+
+    archiveFileName.set(archivesBaseName + '.jar')
+}
+
+test {
+    useJUnitPlatform()
+}
