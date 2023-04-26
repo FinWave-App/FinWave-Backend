@@ -34,18 +34,22 @@ public class NoteApi {
 
     public Object newNote(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
-        OffsetDateTime time = ParamsValidator
+        Optional<OffsetDateTime> time = ParamsValidator
                 .string(request, "notification_time")
                 .optional()
-                .map(OffsetDateTime::parse)
-                .orElse(null);
+                .map(OffsetDateTime::parse);
 
         String text = ParamsValidator
                 .string(request, "text")
                 .length(1, config.maxNoteLength)
                 .require();
 
-        Optional<Long> noteId = database.newNote(sessionsRecord.getUserId(), time, text);
+        if (database.getNotesCount(sessionsRecord.getUserId()) >= config.maxNotesPerUser)
+            halt(409);
+
+        Optional<Long> noteId = time.isPresent() ?
+                database.newNote(sessionsRecord.getUserId(), time.get(), text) :
+                database.newNote(sessionsRecord.getUserId(), text);
 
         if (noteId.isEmpty())
             halt(500);
@@ -169,8 +173,7 @@ public class NoteApi {
                     .toList();
         }
 
-        record Entry(long id, OffsetDateTime notificationTime, String text) {
-        }
+        record Entry(long id, OffsetDateTime notificationTime, String text) {}
     }
 
     static class GetNoteResponse extends ApiResponse {

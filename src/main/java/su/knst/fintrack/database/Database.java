@@ -29,6 +29,8 @@ public class Database {
 
         log.info("Init database...");
 
+        System.setProperty("org.jooq.no-logo", "true");
+
         flyway = Flyway.configure()
                 .dataSource(config.url, config.user, config.password)
                 .baselineVersion("1.0.0")
@@ -42,7 +44,6 @@ public class Database {
 
             System.exit(1);
         }
-
 
         log.info("Connect to database...");
 

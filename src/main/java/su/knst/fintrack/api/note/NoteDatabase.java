@@ -37,6 +37,19 @@ public class NoteDatabase {
                 .map(Record1::component1);
     }
 
+    public Optional<Long> newNote(int userId, String note) {
+        return newNote(userId, null, note);
+    }
+
+    public int getNotesCount(int userId) {
+        return context.selectCount()
+                .from(NOTES)
+                .where(NOTES.OWNER_ID.eq(userId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElse(0);
+    }
+
     public Optional<NotesRecord> getNote(long id) {
         return context.selectFrom(NOTES)
                 .where(NOTES.ID.eq(id))

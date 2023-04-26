@@ -5,6 +5,7 @@ import su.knst.fintrack.config.GroupedConfig;
 
 public class NotesConfig implements GroupedConfig {
     public int maxNoteLength = 1024;
+    public int maxNotesPerUser = 128;
     public int maxNotesInListPerRequest = 64;
     public int minFilterLength = 5;
 

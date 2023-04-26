@@ -52,8 +52,8 @@ create table if not exists accounts_tags
 (
     id                    bigserial primary key,
     owner_id              integer not null references users(id),
-    name                  VARCHAR(64) not null,
-    description           VARCHAR(128)
+    name                  text not null,
+    description           text
 );
 
 alter table accounts_tags
@@ -67,8 +67,8 @@ create table if not exists transactions_tags
     type                  smallint not null,
     expected_amount       numeric not null,
     parent_id             bigint not null references transactions_tags(id),
-    name                  VARCHAR(64) not null,
-    description           VARCHAR(128)
+    name                  text not null,
+    description           text
 );
 
 alter table transactions_tags
@@ -96,8 +96,8 @@ create table if not exists accounts
     currency_id           integer not null references currencies(id),
     amount                numeric not null,
     hidden                boolean not null,
-    name                  VARCHAR(64) not null,
-    description           VARCHAR(128)
+    name                  text not null,
+    description           text
  );
 
 alter table accounts
@@ -113,7 +113,7 @@ create table if not exists transactions
     currency_id           integer not null references currencies(id),
     created_at            timestamp with time zone not null,
     delta                 numeric not null,
-    description           VARCHAR(128)
+    description           text
 );
 
 alter table transactions
@@ -133,7 +133,7 @@ create table if not exists recurring_transactions
     repeat_func_arg       smallint not null,
     notification_mode     smallint not null,
     delta                 numeric not null,
-    description           VARCHAR(128)
+    description           text
 );
 
 alter table transactions

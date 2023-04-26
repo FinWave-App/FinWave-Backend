@@ -4,7 +4,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import su.knst.fintrack.api.account.tag.AccountTagApi;
 import su.knst.fintrack.api.auth.AuthApi;
+import su.knst.fintrack.api.auth.AuthenticationFailException;
 import su.knst.fintrack.api.config.ConfigApi;
 import su.knst.fintrack.api.note.NoteApi;
 import su.knst.fintrack.api.registration.RegistrationApi;
@@ -22,18 +24,21 @@ public class HttpWorker {
     protected RegistrationApi registrationApi;
     protected ConfigApi configApi;
     protected NoteApi noteApi;
+    protected AccountTagApi accountTagApi;
 
     @Inject
     public HttpWorker(Configs configs,
                       AuthApi authApi,
                       RegistrationApi registrationApi,
                       ConfigApi configApi,
-                      NoteApi noteApi) {
+                      NoteApi noteApi,
+                      AccountTagApi accountTagApi) {
         config = configs.getState(new HttpConfig());
         this.authApi = authApi;
         this.registrationApi = registrationApi;
         this.configApi = configApi;
         this.noteApi = noteApi;
+        this.accountTagApi = accountTagApi;
 
         setup();
         patches();
@@ -50,6 +55,15 @@ public class HttpWorker {
                 post("/new", noteApi::newNote);
                 post("/edit", noteApi::editNote);
                 post("/editTime", noteApi::editNoteNotificationTime);
+            });
+
+            path("/accounts", () -> {
+                path("/tags", () -> {
+                    get("/getList", accountTagApi::getTags);
+                    post("/new", accountTagApi::newTag);
+                    post("/editName", accountTagApi::editTagName);
+                    post("/editDescription", accountTagApi::editTagDescription);
+                });
             });
         });
 
@@ -91,6 +105,12 @@ public class HttpWorker {
             response.status(400);
 
             response.body(ApiMessage.of("Illegal arguments").toString());
+        });
+
+        exception(AuthenticationFailException.class, (exception, request, response) -> {
+            response.status(401);
+
+            response.body(ApiMessage.of("Authentication fail").toString());
         });
 
         exception(Exception.class, (exception, request, response) -> {

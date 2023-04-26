@@ -2,6 +2,8 @@ package su.knst.fintrack;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.jooq.Constants;
+import org.jooq.tools.JooqLogger;
 import su.knst.fintrack.http.HttpWorker;
 import su.knst.fintrack.logging.LogsInitializer;
 
