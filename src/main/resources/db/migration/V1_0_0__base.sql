@@ -77,11 +77,11 @@ alter table transactions_tags
 
 create table if not exists currencies
 (
-    id                    serial primary key,
+    id                    bigserial primary key,
     owner_id              integer not null references users(id),
-    code                  VARCHAR(32) not null,
-    symbol                VARCHAR(16) not null,
-    description           VARCHAR(64) not null
+    code                  text not null,
+    symbol                text not null,
+    description           text not null
 );
 
 alter table currencies
@@ -93,7 +93,7 @@ create table if not exists accounts
     id                    bigserial primary key,
     owner_id              integer not null references users(id),
     tag_id                bigint not null references accounts_tags(id),
-    currency_id           integer not null references currencies(id),
+    currency_id           bigint not null references currencies(id),
     amount                numeric not null,
     hidden                boolean not null,
     name                  text not null,
@@ -110,7 +110,7 @@ create table if not exists transactions
     owner_id              integer not null references users(id),
     tag_id                bigint not null references transactions_tags(id),
     account_id            bigint not null references accounts(id),
-    currency_id           integer not null references currencies(id),
+    currency_id           bigint not null references currencies(id),
     created_at            timestamp with time zone not null,
     delta                 numeric not null,
     description           text
@@ -126,7 +126,7 @@ create table if not exists recurring_transactions
     owner_id              integer not null references users(id),
     tag_id                bigint not null references transactions_tags(id),
     account_id            bigint not null references accounts(id),
-    currency_id           integer not null references currencies(id),
+    currency_id           bigint not null references currencies(id),
     last_repeat           timestamp with time zone not null,
     next_repeat           timestamp with time zone not null,
     repeat_func           smallint not null,

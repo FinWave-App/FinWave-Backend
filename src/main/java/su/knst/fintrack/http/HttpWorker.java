@@ -4,12 +4,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import su.knst.fintrack.api.account.AccountApi;
 import su.knst.fintrack.api.account.tag.AccountTagApi;
 import su.knst.fintrack.api.auth.AuthApi;
 import su.knst.fintrack.api.auth.AuthenticationFailException;
 import su.knst.fintrack.api.config.ConfigApi;
 import su.knst.fintrack.api.note.NoteApi;
-import su.knst.fintrack.api.registration.RegistrationApi;
+import su.knst.fintrack.api.user.UserApi;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.general.HttpConfig;
 
@@ -21,24 +22,27 @@ public class HttpWorker {
 
     protected HttpConfig config;
     protected AuthApi authApi;
-    protected RegistrationApi registrationApi;
+    protected UserApi userApi;
     protected ConfigApi configApi;
     protected NoteApi noteApi;
     protected AccountTagApi accountTagApi;
+    protected AccountApi accountApi;
 
     @Inject
     public HttpWorker(Configs configs,
                       AuthApi authApi,
-                      RegistrationApi registrationApi,
+                      UserApi userApi,
                       ConfigApi configApi,
                       NoteApi noteApi,
-                      AccountTagApi accountTagApi) {
+                      AccountTagApi accountTagApi,
+                      AccountApi accountApi) {
         config = configs.getState(new HttpConfig());
         this.authApi = authApi;
-        this.registrationApi = registrationApi;
+        this.userApi = userApi;
         this.configApi = configApi;
         this.noteApi = noteApi;
         this.accountTagApi = accountTagApi;
+        this.accountApi = accountApi;
 
         setup();
         patches();
@@ -64,12 +68,20 @@ public class HttpWorker {
                     post("/editName", accountTagApi::editTagName);
                     post("/editDescription", accountTagApi::editTagDescription);
                 });
+
+                get("/getList", accountApi::getAccounts);
+                post("/new", accountApi::newAccount);
+                post("/editName", accountApi::editAccountName);
+                post("/editDescription", accountApi::editAccountDescription);
+                post("/editTag", accountApi::editAccountTag);
+                post("/hide", accountApi::hideAccount);
+                post("/show", accountApi::showAccount);
             });
         });
 
         path("/auth", () -> {
             post("/login", authApi::login);
-            post("/register", registrationApi::register);
+            post("/register", userApi::register);
         });
 
         path("/config", () -> {

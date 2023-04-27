@@ -1,23 +1,22 @@
 package su.knst.fintrack.api.account.tag;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
-import su.knst.fintrack.api.auth.AuthDatabase;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.app.AccountsConfig;
-import su.knst.fintrack.config.general.AuthConfig;
 import su.knst.fintrack.jooq.tables.records.AccountsTagsRecord;
 import su.knst.fintrack.jooq.tables.records.UsersSessionsRecord;
 import su.knst.fintrack.utils.params.ParamsValidator;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static spark.Spark.halt;
 
+@Singleton
 public class AccountTagApi {
     protected AccountsConfig config;
     protected AccountTagDatabase database;

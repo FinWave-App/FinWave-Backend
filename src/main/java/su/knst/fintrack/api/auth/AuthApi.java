@@ -6,7 +6,7 @@ import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
 import su.knst.fintrack.config.Configs;
-import su.knst.fintrack.config.general.AuthConfig;
+import su.knst.fintrack.config.general.UserConfig;
 import su.knst.fintrack.jooq.tables.records.UsersRecord;
 import su.knst.fintrack.jooq.tables.records.UsersSessionsRecord;
 import su.knst.fintrack.utils.params.ParamsValidator;
@@ -22,13 +22,13 @@ public class AuthApi {
     protected static SecureRandom random = new SecureRandom();
     protected static char[] sessionSymbols = "1234567890ABCDEFGHIKLMNOPQRSTVXYZabcdefghiklmnopqrstvxyz".toCharArray();
 
-    protected AuthConfig config;
+    protected UserConfig config;
     protected AuthDatabase database;
 
     @Inject
     public AuthApi(AuthDatabase database, Configs configs) {
         this.database = database;
-        this.config = configs.getState(new AuthConfig());
+        this.config = configs.getState(new UserConfig());
     }
 
     protected static String generateSessionToken() {

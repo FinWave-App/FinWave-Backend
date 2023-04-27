@@ -8,6 +8,7 @@ import su.knst.fintrack.api.ApiResponse;
 import su.knst.fintrack.api.user.UserSettingsDatabase;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.app.NotesConfig;
+import su.knst.fintrack.http.ApiMessage;
 import su.knst.fintrack.jooq.tables.records.NotesRecord;
 import su.knst.fintrack.jooq.tables.records.UsersSessionsRecord;
 import su.knst.fintrack.utils.params.ParamsValidator;
@@ -76,7 +77,7 @@ public class NoteApi {
 
         response.status(200);
 
-        return null;
+        return ApiMessage.of("Note edited");
     }
 
     public Object editNoteNotificationTime(Request request, Response response) {
@@ -97,7 +98,7 @@ public class NoteApi {
 
         response.status(200);
 
-        return null;
+        return ApiMessage.of("Note notification time edited");
     }
 
     public Object getNote(Request request, Response response) {

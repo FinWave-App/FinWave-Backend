@@ -3,7 +3,7 @@ package su.knst.fintrack.config.general;
 import su.knst.fintrack.config.ConfigGroup;
 import su.knst.fintrack.config.GroupedConfig;
 
-public class AuthConfig implements GroupedConfig {
+public class UserConfig implements GroupedConfig {
     public int userSessionsLifetimeDays = 14;
 
     public int minLoginLength = 4;

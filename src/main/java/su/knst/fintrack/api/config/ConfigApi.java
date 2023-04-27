@@ -6,7 +6,7 @@ import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
 import su.knst.fintrack.config.Configs;
-import su.knst.fintrack.config.general.AuthConfig;
+import su.knst.fintrack.config.general.UserConfig;
 
 @Singleton
 public class ConfigApi {
@@ -14,7 +14,7 @@ public class ConfigApi {
 
     @Inject
     public ConfigApi(Configs configs) {
-        this.authConfigJson = ApiResponse.GSON.toJson(configs.getState(new AuthConfig()));
+        this.authConfigJson = ApiResponse.GSON.toJson(configs.getState(new UserConfig()));
     }
 
     public Object authConfigViewer(Request request, Response response) {
