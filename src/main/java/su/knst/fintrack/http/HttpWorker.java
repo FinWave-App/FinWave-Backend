@@ -9,6 +9,7 @@ import su.knst.fintrack.api.account.tag.AccountTagApi;
 import su.knst.fintrack.api.auth.AuthApi;
 import su.knst.fintrack.api.auth.AuthenticationFailException;
 import su.knst.fintrack.api.config.ConfigApi;
+import su.knst.fintrack.api.currency.CurrencyApi;
 import su.knst.fintrack.api.note.NoteApi;
 import su.knst.fintrack.api.user.UserApi;
 import su.knst.fintrack.config.Configs;
@@ -27,6 +28,7 @@ public class HttpWorker {
     protected NoteApi noteApi;
     protected AccountTagApi accountTagApi;
     protected AccountApi accountApi;
+    protected CurrencyApi currencyApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -35,7 +37,8 @@ public class HttpWorker {
                       ConfigApi configApi,
                       NoteApi noteApi,
                       AccountTagApi accountTagApi,
-                      AccountApi accountApi) {
+                      AccountApi accountApi,
+                      CurrencyApi currencyApi) {
         config = configs.getState(new HttpConfig());
         this.authApi = authApi;
         this.userApi = userApi;
@@ -43,6 +46,7 @@ public class HttpWorker {
         this.noteApi = noteApi;
         this.accountTagApi = accountTagApi;
         this.accountApi = accountApi;
+        this.currencyApi = currencyApi;
 
         setup();
         patches();
@@ -59,6 +63,14 @@ public class HttpWorker {
                 post("/new", noteApi::newNote);
                 post("/edit", noteApi::editNote);
                 post("/editTime", noteApi::editNoteNotificationTime);
+            });
+
+            path("/currencies", () -> {
+                get("/getList", currencyApi::getCurrencies);
+                post("/new", currencyApi::newCurrency);
+                post("/editSymbol", currencyApi::editCurrencySymbol);
+                post("/editCode", currencyApi::editCurrencyCode);
+                post("/editDescription", currencyApi::editCurrencyDescription);
             });
 
             path("/accounts", () -> {

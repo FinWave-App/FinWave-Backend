@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static su.knst.fintrack.jooq.Tables.CURRENCIES;
+import static su.knst.fintrack.jooq.Tables.NOTES;
 
 @Singleton
 public class CurrencyDatabase {
@@ -32,21 +33,21 @@ public class CurrencyDatabase {
                 .map(Record1::component1);
     }
 
-    public void changeCurrencyCode(long currencyId, String code) {
+    public void editCurrencyCode(long currencyId, String code) {
         context.update(CURRENCIES)
                 .set(CURRENCIES.CODE, code)
                 .where(CURRENCIES.ID.eq(currencyId))
                 .execute();
     }
 
-    public void changeCurrencySymbol(long currencyId, String symbol) {
+    public void editCurrencySymbol(long currencyId, String symbol) {
         context.update(CURRENCIES)
                 .set(CURRENCIES.SYMBOL, symbol)
                 .where(CURRENCIES.ID.eq(currencyId))
                 .execute();
     }
 
-    public void changeCurrencyDescription(long currencyId, String description) {
+    public void editCurrencyDescription(long currencyId, String description) {
         context.update(CURRENCIES)
                 .set(CURRENCIES.DESCRIPTION, description)
                 .where(CURRENCIES.ID.eq(currencyId))
@@ -58,6 +59,15 @@ public class CurrencyDatabase {
                 .selectFrom(CURRENCIES)
                 .where(CURRENCIES.OWNER_ID.eq(userId).and(CURRENCIES.OWNER_ID.eq(1)))
                 .fetch();
+    }
+
+    public int getCurrenciesCount(int userId) {
+        return context.selectCount()
+                .from(CURRENCIES)
+                .where(CURRENCIES.OWNER_ID.eq(userId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElse(0);
     }
 
     public boolean userCanReadCurrency(int userId, long currencyId) {
