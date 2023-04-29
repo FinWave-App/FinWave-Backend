@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static su.knst.fintrack.jooq.Tables.*;
-import static su.knst.fintrack.jooq.Tables.ACCOUNTS_TAGS;
 
 @Singleton
 public class TransactionDatabase {

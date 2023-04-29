@@ -20,6 +20,7 @@ import static spark.Spark.halt;
 @Singleton
 public class AuthApi {
     protected static SecureRandom random = new SecureRandom();
+    @SuppressWarnings("SpellCheckingInspection")
     protected static char[] sessionSymbols = "1234567890ABCDEFGHIKLMNOPQRSTVXYZabcdefghiklmnopqrstvxyz".toCharArray();
 
     protected UserConfig config;

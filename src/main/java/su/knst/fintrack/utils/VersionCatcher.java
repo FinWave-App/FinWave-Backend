@@ -12,6 +12,7 @@ public class VersionCatcher {
         URL url = cl.getResource("META-INF/MANIFEST.MF");
         Manifest manifest;
         try {
+            assert url != null;
             manifest = new Manifest(url.openStream());
         } catch (IOException e) {
             throw new RuntimeException(e);

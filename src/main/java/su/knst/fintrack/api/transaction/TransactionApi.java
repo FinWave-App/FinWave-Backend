@@ -19,8 +19,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static spark.Spark.halt;
-
 @Singleton
 public class TransactionApi {
     protected TransactionDatabase database;

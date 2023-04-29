@@ -3,7 +3,6 @@ package su.knst.fintrack.api.auth;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
-import org.jooq.InsertSetMoreStep;
 import su.knst.fintrack.database.Database;
 import su.knst.fintrack.jooq.tables.records.UsersRecord;
 import su.knst.fintrack.jooq.tables.records.UsersSessionsRecord;

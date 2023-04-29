@@ -2,21 +2,15 @@ package su.knst.fintrack.api.transaction.tag;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.jooq.Converters;
 import org.jooq.DSLContext;
-import org.jooq.InsertSetMoreStep;
 import org.jooq.Record1;
-import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import su.knst.fintrack.database.Database;
-import su.knst.fintrack.jooq.tables.records.AccountsTagsRecord;
 import su.knst.fintrack.jooq.tables.records.TransactionsTagsRecord;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static su.knst.fintrack.jooq.Tables.ACCOUNTS_TAGS;
 import static su.knst.fintrack.jooq.Tables.TRANSACTIONS_TAGS;
 
 @Singleton

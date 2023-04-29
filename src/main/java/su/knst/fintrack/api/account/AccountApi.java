@@ -5,21 +5,16 @@ import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
-import su.knst.fintrack.api.account.tag.AccountTagApi;
 import su.knst.fintrack.api.account.tag.AccountTagDatabase;
 import su.knst.fintrack.api.currency.CurrencyDatabase;
-import su.knst.fintrack.api.note.NoteApi;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.app.AccountsConfig;
 import su.knst.fintrack.http.ApiMessage;
 import su.knst.fintrack.jooq.tables.records.AccountsRecord;
-import su.knst.fintrack.jooq.tables.records.AccountsTagsRecord;
-import su.knst.fintrack.jooq.tables.records.NotesRecord;
 import su.knst.fintrack.jooq.tables.records.UsersSessionsRecord;
 import su.knst.fintrack.utils.params.ParamsValidator;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static su.knst.fintrack.jooq.Tables.CURRENCIES;
-import static su.knst.fintrack.jooq.Tables.NOTES;
 
 @Singleton
 public class CurrencyDatabase {

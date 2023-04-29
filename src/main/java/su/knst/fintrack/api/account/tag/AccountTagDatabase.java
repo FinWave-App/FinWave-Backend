@@ -4,10 +4,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.*;
 import su.knst.fintrack.database.Database;
-import su.knst.fintrack.jooq.tables.AccountsTags;
 import su.knst.fintrack.jooq.tables.records.AccountsTagsRecord;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 

@@ -3,7 +3,6 @@ package su.knst.fintrack.api.note;
 
 import com.google.inject.Inject;
 import org.jooq.DSLContext;
-import org.jooq.InsertSetMoreStep;
 import org.jooq.Record1;
 import su.knst.fintrack.database.Database;
 import su.knst.fintrack.jooq.tables.records.NotesRecord;

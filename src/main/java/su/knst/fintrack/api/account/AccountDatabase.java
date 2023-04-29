@@ -3,20 +3,15 @@ package su.knst.fintrack.api.account;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
-import org.jooq.InsertSetMoreStep;
 import org.jooq.Record1;
 import su.knst.fintrack.database.Database;
-import su.knst.fintrack.jooq.tables.Accounts;
 import su.knst.fintrack.jooq.tables.records.AccountsRecord;
-import su.knst.fintrack.jooq.tables.records.NotesRecord;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static su.knst.fintrack.jooq.Tables.*;
-import static su.knst.fintrack.jooq.Tables.NOTES;
 
 @Singleton
 public class AccountDatabase {
