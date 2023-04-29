@@ -12,6 +12,7 @@ import su.knst.fintrack.api.config.ConfigApi;
 import su.knst.fintrack.api.currency.CurrencyApi;
 import su.knst.fintrack.api.note.NoteApi;
 import su.knst.fintrack.api.transaction.TransactionApi;
+import su.knst.fintrack.api.transaction.tag.TransactionTagApi;
 import su.knst.fintrack.api.user.UserApi;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.general.HttpConfig;
@@ -31,6 +32,7 @@ public class HttpWorker {
     protected AccountApi accountApi;
     protected CurrencyApi currencyApi;
     protected TransactionApi transactionApi;
+    protected TransactionTagApi transactionTagApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -41,7 +43,8 @@ public class HttpWorker {
                       AccountTagApi accountTagApi,
                       AccountApi accountApi,
                       CurrencyApi currencyApi,
-                      TransactionApi transactionApi) {
+                      TransactionApi transactionApi,
+                      TransactionTagApi transactionTagApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -52,6 +55,7 @@ public class HttpWorker {
         this.accountApi = accountApi;
         this.currencyApi = currencyApi;
         this.transactionApi = transactionApi;
+        this.transactionTagApi = transactionTagApi;
 
         setup();
         patches();
@@ -98,6 +102,16 @@ public class HttpWorker {
             });
 
             path("/transactions", () -> {
+                path("/tags", () -> {
+                    get("/getList", transactionTagApi::getTags);
+                    post("/new", transactionTagApi::newTag);
+                    post("/editType", transactionTagApi::editTagType);
+                    post("/editExpectedAmount", transactionTagApi::editTagExpectedAmount);
+                    post("/editParentId", transactionTagApi::editTagParentId);
+                    post("/editName", transactionTagApi::editTagName);
+                    post("/editDescription", transactionTagApi::editTagDescription);
+                });
+
                 get("/getList", transactionApi::getTransactions);
                 post("/new", transactionApi::newTransaction);
                 post("/edit", transactionApi::editTransaction);
