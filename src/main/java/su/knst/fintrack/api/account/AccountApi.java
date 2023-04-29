@@ -67,9 +67,8 @@ public class AccountApi {
         if (database.getAccountsCount(sessionsRecord.getUserId()) >= config.maxAccountsPerUser)
             halt(409);
 
-        Optional<Long> accountId = description.isPresent() ?
-                database.newAccount(sessionsRecord.getUserId(), tagId, currencyId, name, description.get()) :
-                database.newAccount(sessionsRecord.getUserId(), tagId, currencyId, name);
+        Optional<Long> accountId = database
+                .newAccount(sessionsRecord.getUserId(), tagId, currencyId, name, description.orElse(null));
 
         if (accountId.isEmpty())
             halt(500);

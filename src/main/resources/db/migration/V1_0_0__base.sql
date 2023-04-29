@@ -66,7 +66,7 @@ create table if not exists transactions_tags
     owner_id              integer not null references users(id),
     type                  smallint not null,
     expected_amount       numeric not null,
-    parent_id             bigint not null references transactions_tags(id),
+    parent_id             bigint references transactions_tags(id),
     name                  text not null,
     description           text
 );

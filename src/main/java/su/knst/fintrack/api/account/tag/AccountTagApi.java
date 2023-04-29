@@ -7,6 +7,7 @@ import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.app.AccountsConfig;
+import su.knst.fintrack.http.ApiMessage;
 import su.knst.fintrack.jooq.tables.records.AccountsTagsRecord;
 import su.knst.fintrack.jooq.tables.records.UsersSessionsRecord;
 import su.knst.fintrack.utils.params.ParamsValidator;
@@ -43,9 +44,7 @@ public class AccountTagApi {
         if (database.getTagsCount(sessionsRecord.getUserId()) >= config.tags.maxTagsPerUser)
             halt(409);
 
-        Optional<Long> tagId = description.isPresent() ?
-                database.newTag(sessionsRecord.getUserId(), name, description.get()) :
-                database.newTag(sessionsRecord.getUserId(), name);
+        Optional<Long> tagId = database.newTag(sessionsRecord.getUserId(), name, description.orElse(null));
 
         if (tagId.isEmpty())
             halt(500);
@@ -74,7 +73,7 @@ public class AccountTagApi {
                 .require();
 
         long tagId = ParamsValidator
-                .longV(request, "noteId")
+                .longV(request, "tagId")
                 .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
                 .require();
 
@@ -82,7 +81,7 @@ public class AccountTagApi {
 
         response.status(200);
 
-        return null;
+        return ApiMessage.of("Tag name edited");
     }
 
     public Object editTagDescription(Request request, Response response) {
@@ -94,7 +93,7 @@ public class AccountTagApi {
                 .require();
 
         long tagId = ParamsValidator
-                .longV(request, "noteId")
+                .longV(request, "tagId")
                 .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
                 .require();
 
@@ -102,7 +101,23 @@ public class AccountTagApi {
 
         response.status(200);
 
-        return null;
+        return ApiMessage.of("Tag description edited");
+    }
+
+    public Object deleteTag(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        long tagId = ParamsValidator
+                .longV(request, "noteId")
+                .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
+                .matches((id) -> database.tagSafeToDelete(id))
+                .require();
+
+        database.deleteTag(tagId);
+
+        response.status(200);
+
+        return ApiMessage.of("Tag deleted");
     }
 
     static class GetTagsResponse extends ApiResponse {

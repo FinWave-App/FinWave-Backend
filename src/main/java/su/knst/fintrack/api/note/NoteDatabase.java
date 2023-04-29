@@ -23,15 +23,11 @@ public class NoteDatabase {
     }
 
     public Optional<Long> newNote(int userId, OffsetDateTime notificationTime, String note) {
-        InsertSetMoreStep<NotesRecord> insert = context.insertInto(NOTES)
+        return context.insertInto(NOTES)
                 .set(NOTES.OWNER_ID, userId)
+                .set(NOTES.NOTIFICATION_TIME, notificationTime)
                 .set(NOTES.LAST_EDIT, OffsetDateTime.now())
-                .set(NOTES.NOTE, note);
-
-        if (notificationTime != null)
-            insert = insert.set(NOTES.NOTIFICATION_TIME, notificationTime);
-
-        return insert
+                .set(NOTES.NOTE, note)
                 .returningResult(NOTES.ID)
                 .fetchOptional()
                 .map(Record1::component1);
@@ -59,14 +55,14 @@ public class NoteDatabase {
     public List<NotesRecord> getNotes(int userId) {
         return context.selectFrom(NOTES)
                 .where(NOTES.OWNER_ID.eq(userId))
-                .orderBy(NOTES.LAST_EDIT, NOTES.ID)
+                .orderBy(NOTES.LAST_EDIT.desc(), NOTES.ID.desc())
                 .fetch();
     }
 
     public List<NotesRecord> getNotes(int userId, int offset, int count) {
         return context.selectFrom(NOTES)
                 .where(NOTES.OWNER_ID.eq(userId))
-                .orderBy(NOTES.LAST_EDIT, NOTES.ID)
+                .orderBy(NOTES.LAST_EDIT.desc(), NOTES.ID.desc())
                 .limit(offset, count)
                 .fetch();
     }
@@ -84,7 +80,7 @@ public class NoteDatabase {
                 .where(NOTES.OWNER_ID.eq(userId)
                         .and(NOTES.NOTE.contains(containsText))
                 )
-                .orderBy(NOTES.LAST_EDIT, NOTES.ID)
+                .orderBy(NOTES.LAST_EDIT.desc(), NOTES.ID.desc())
                 .limit(offset, count)
                 .fetch();
     }
@@ -100,6 +96,12 @@ public class NoteDatabase {
     public void updateNotificationTime(long id, OffsetDateTime time) {
         context.update(NOTES)
                 .set(NOTES.NOTIFICATION_TIME, time)
+                .where(NOTES.ID.eq(id))
+                .execute();
+    }
+
+    public void deleteNote(long id) {
+        context.deleteFrom(NOTES)
                 .where(NOTES.ID.eq(id))
                 .execute();
     }

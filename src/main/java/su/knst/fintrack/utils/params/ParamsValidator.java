@@ -6,33 +6,43 @@ import su.knst.fintrack.utils.params.validators.LongValidator;
 import su.knst.fintrack.utils.params.validators.StringValidator;
 
 public class ParamsValidator {
-    public static StringValidator string(Request request, String name) {
-        return new StringValidator(request.queryParams(name));
+    public static StringValidator string(String raw) {
+        return new StringValidator(raw);
     }
 
-    public static IntValidator integer(Request request, String name) {
-        String value = request.queryParams(name);
+    public static StringValidator string(Request request, String name) {
+        return string(request.queryParams(name));
+    }
+
+    public static IntValidator integer(String raw) {
         Integer number = null;
 
-        if (value != null)
+        if (raw != null)
             try {
-                number = Integer.parseInt(value);
+                number = Integer.parseInt(raw);
             } catch (Exception ignored) {
             }
 
         return new IntValidator(number);
     }
 
-    public static LongValidator longV(Request request, String name) {
-        String value = request.queryParams(name);
+    public static IntValidator integer(Request request, String name) {
+        return integer(request.queryParams(name));
+    }
+
+    public static LongValidator longV(String raw) {
         Long number = null;
 
-        if (value != null)
+        if (raw != null)
             try {
-                number = Long.parseLong(value);
+                number = Long.parseLong(raw);
             } catch (Exception ignored) {
             }
 
         return new LongValidator(number);
+    }
+
+    public static LongValidator longV(Request request, String name) {
+        return longV(request.queryParams(name));
     }
 }

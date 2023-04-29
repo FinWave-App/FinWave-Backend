@@ -154,7 +154,7 @@ public class NoteApi {
 
         String filter = ParamsValidator
                 .string(request, "filter")
-                .length(config.minFilterLength, config.maxNoteLength)
+                .length(1, config.maxNoteLength)
                 .require();
 
         List<NotesRecord> records = database.findNote(sessionsRecord.getUserId(), filter, offset, count);
@@ -162,6 +162,21 @@ public class NoteApi {
         response.status(200);
 
         return new GetNotesListResponse(records);
+    }
+
+    public Object deleteNote(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        long noteId = ParamsValidator
+                .longV(request, "noteId")
+                .matches((id) -> database.userOwnNote(sessionsRecord.getUserId(), id))
+                .require();
+
+        database.deleteNote(noteId);
+
+        response.status(200);
+
+        return ApiMessage.of("Note deleted");
     }
 
     static class GetNotesListResponse extends ApiResponse {

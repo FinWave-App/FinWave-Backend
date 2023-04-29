@@ -28,25 +28,17 @@ public class AccountDatabase {
     }
 
     public Optional<Long> newAccount(int userId, long tagId, long currencyId, String name, String description) {
-        InsertSetMoreStep<AccountsRecord> insert = context.insertInto(ACCOUNTS)
+        return context.insertInto(ACCOUNTS)
                 .set(ACCOUNTS.OWNER_ID, userId)
                 .set(ACCOUNTS.TAG_ID, tagId)
                 .set(ACCOUNTS.CURRENCY_ID, currencyId)
                 .set(ACCOUNTS.AMOUNT, BigDecimal.ZERO)
                 .set(ACCOUNTS.HIDDEN, false)
-                .set(ACCOUNTS.NAME, name);
-
-        if (description != null)
-            insert = insert.set(ACCOUNTS.DESCRIPTION, description);
-
-        return insert
+                .set(ACCOUNTS.NAME, name)
+                .set(ACCOUNTS.DESCRIPTION, description)
                 .returningResult(ACCOUNTS.ID)
                 .fetchOptional()
                 .map(Record1::component1);
-    }
-
-    public Optional<Long> newAccount(int ownerId, long tagId, long currencyId, String name) {
-        return newAccount(ownerId, tagId, currencyId, name, null);
     }
 
     protected void setHiddenState(long accountId, boolean hidden) {

@@ -11,6 +11,7 @@ import su.knst.fintrack.api.auth.AuthenticationFailException;
 import su.knst.fintrack.api.config.ConfigApi;
 import su.knst.fintrack.api.currency.CurrencyApi;
 import su.knst.fintrack.api.note.NoteApi;
+import su.knst.fintrack.api.transaction.TransactionApi;
 import su.knst.fintrack.api.user.UserApi;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.general.HttpConfig;
@@ -29,6 +30,7 @@ public class HttpWorker {
     protected AccountTagApi accountTagApi;
     protected AccountApi accountApi;
     protected CurrencyApi currencyApi;
+    protected TransactionApi transactionApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -38,8 +40,10 @@ public class HttpWorker {
                       NoteApi noteApi,
                       AccountTagApi accountTagApi,
                       AccountApi accountApi,
-                      CurrencyApi currencyApi) {
-        config = configs.getState(new HttpConfig());
+                      CurrencyApi currencyApi,
+                      TransactionApi transactionApi) {
+        this.config = configs.getState(new HttpConfig());
+
         this.authApi = authApi;
         this.userApi = userApi;
         this.configApi = configApi;
@@ -47,6 +51,7 @@ public class HttpWorker {
         this.accountTagApi = accountTagApi;
         this.accountApi = accountApi;
         this.currencyApi = currencyApi;
+        this.transactionApi = transactionApi;
 
         setup();
         patches();
@@ -63,6 +68,7 @@ public class HttpWorker {
                 post("/new", noteApi::newNote);
                 post("/edit", noteApi::editNote);
                 post("/editTime", noteApi::editNoteNotificationTime);
+                post("/delete", noteApi::deleteNote);
             });
 
             path("/currencies", () -> {
@@ -79,6 +85,7 @@ public class HttpWorker {
                     post("/new", accountTagApi::newTag);
                     post("/editName", accountTagApi::editTagName);
                     post("/editDescription", accountTagApi::editTagDescription);
+                    post("/delete", accountTagApi::deleteTag);
                 });
 
                 get("/getList", accountApi::getAccounts);
@@ -88,6 +95,13 @@ public class HttpWorker {
                 post("/editTag", accountApi::editAccountTag);
                 post("/hide", accountApi::hideAccount);
                 post("/show", accountApi::showAccount);
+            });
+
+            path("/transactions", () -> {
+                get("/getList", transactionApi::getTransactions);
+                post("/new", transactionApi::newTransaction);
+                post("/edit", transactionApi::editTransaction);
+                post("/delete", transactionApi::deleteTransaction);
             });
         });
 

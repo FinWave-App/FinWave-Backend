@@ -4,10 +4,13 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.jooq.Constants;
 import org.jooq.tools.JooqLogger;
+import su.knst.fintrack.api.transaction.tag.TransactionTagDatabase;
+import su.knst.fintrack.api.user.UserDatabase;
 import su.knst.fintrack.http.HttpWorker;
 import su.knst.fintrack.logging.LogsInitializer;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.GeneralSecurityException;
 
 public class Main {

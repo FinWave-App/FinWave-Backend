@@ -11,8 +11,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-import static su.knst.fintrack.jooq.Tables.ACCOUNTS_TAGS;
-import static su.knst.fintrack.jooq.Tables.NOTES;
+import static su.knst.fintrack.jooq.Tables.*;
 
 @Singleton
 public class AccountTagDatabase {
@@ -24,20 +23,13 @@ public class AccountTagDatabase {
     }
 
     public Optional<Long> newTag(int userId, String name, String description) {
-        InsertSetMoreStep<AccountsTagsRecord> insert = context.insertInto(ACCOUNTS_TAGS)
+        return context.insertInto(ACCOUNTS_TAGS)
                 .set(ACCOUNTS_TAGS.OWNER_ID, userId)
-                .set(ACCOUNTS_TAGS.NAME, name);
-
-        if (description != null)
-            insert = insert.set(ACCOUNTS_TAGS.DESCRIPTION, description);
-
-        return insert.returningResult(ACCOUNTS_TAGS.ID)
+                .set(ACCOUNTS_TAGS.NAME, name)
+                .set(ACCOUNTS_TAGS.DESCRIPTION, description)
+                .returningResult(ACCOUNTS_TAGS.ID)
                 .fetchOptional()
                 .map(Record1::component1);
-    }
-
-    public Optional<Long> newTag(int userId, String name) {
-        return newTag(userId, name, null);
     }
 
     public Optional<AccountsTagsRecord> getTag(long id) {
@@ -81,5 +73,21 @@ public class AccountTagDatabase {
                 .fetchOptional()
                 .map(Record1::component1)
                 .orElse(0);
+    }
+
+    public boolean tagSafeToDelete(long tagId) {
+        return context.selectCount()
+                .from(ACCOUNTS)
+                .where(ACCOUNTS.TAG_ID.eq(tagId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .map(c -> c == 0)
+                .orElse(false);
+    }
+
+    public void deleteTag(long tagId) {
+        context.deleteFrom(ACCOUNTS_TAGS)
+                .where(ACCOUNTS_TAGS.ID.eq(tagId))
+                .execute();
     }
 }

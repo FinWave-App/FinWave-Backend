@@ -30,17 +30,13 @@ public class AuthDatabase {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expires = now.plusDays(lifetimeDays);
 
-        InsertSetMoreStep<UsersSessionsRecord> step =
-                context.insertInto(USERS_SESSIONS)
-                        .set(USERS_SESSIONS.USER_ID, userId)
-                        .set(USERS_SESSIONS.TOKEN, token)
-                        .set(USERS_SESSIONS.CREATED_AT, now)
-                        .set(USERS_SESSIONS.EXPIRES_AT, expires);
-
-        if (description != null)
-            step = step.set(USERS_SESSIONS.DESCRIPTION, description);
-
-        step.execute();
+        context.insertInto(USERS_SESSIONS)
+                .set(USERS_SESSIONS.USER_ID, userId)
+                .set(USERS_SESSIONS.TOKEN, token)
+                .set(USERS_SESSIONS.CREATED_AT, now)
+                .set(USERS_SESSIONS.EXPIRES_AT, expires)
+                .set(USERS_SESSIONS.DESCRIPTION, description)
+                .execute();
     }
 
     public void updateSessionLifetime(String token, int lifetimeDays) {
