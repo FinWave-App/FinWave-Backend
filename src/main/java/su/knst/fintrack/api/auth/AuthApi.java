@@ -41,9 +41,13 @@ public class AuthApi {
     }
 
     public void auth(Request request, Response response) throws AuthenticationFailException {
+        if (request.requestMethod().equals("OPTIONS"))
+            return;
+
         String token = ParamsValidator
-                .string(request, "session_token")
-                .require();
+                .string(request.headers("Authorization"))
+                .matches((s) -> s.startsWith("Bearer "))
+                .map((s -> s.replace("Bearer ", "")));
 
         Optional<UsersSessionsRecord> sessionsRecord = database.authUser(token);
 
@@ -65,16 +69,19 @@ public class AuthApi {
     }
 
     public Object login(Request request, Response response) {
-        String login = ParamsValidator.string(request, "login")
+        String login = ParamsValidator
+                .string(request, "login")
                 .length(config.minLoginLength, config.maxLoginLength)
                 .require();
 
-        String password = ParamsValidator.string(request, "password")
+        String password = ParamsValidator
+                .string(request, "password")
                 .length(config.minPasswordLength, config.maxPasswordLength)
                 .require();
 
-        Optional<String> description = ParamsValidator.string(request, "description")
-                .length(0, config.maxSessionDescriptionLength)
+        Optional<String> description = ParamsValidator
+                .string(request, "description")
+                .length(1, config.maxSessionDescriptionLength)
                 .optional();
 
         Optional<UsersRecord> sessionsRecord = database.authUser(login, password);

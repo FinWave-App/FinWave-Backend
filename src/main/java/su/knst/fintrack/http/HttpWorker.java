@@ -124,8 +124,9 @@ public class HttpWorker {
             post("/register", userApi::register);
         });
 
-        path("/config", () -> {
-            get("/auth", configApi::authConfigViewer);
+        path("/configs", () -> {
+            get("/get", configApi::getConfigs);
+            get("/hash", configApi::hash);
         });
     }
 
@@ -149,24 +150,28 @@ public class HttpWorker {
             response.header("Access-Control-Allow-Origin", config.cors.allowedOrigins);
             response.header("Access-Control-Request-Method", config.cors.allowedMethods);
             response.header("Access-Control-Allow-Headers", config.cors.allowedHeaders);
+            response.header("Access-Control-Allow-Credentials", "true");
 
             response.type("application/json");
         });
 
         exception(IllegalArgumentException.class, (exception, request, response) -> {
             response.status(400);
+            log.trace(request.url() + " - 400: ", exception);
 
             response.body(ApiMessage.of("Illegal arguments").toString());
         });
 
         exception(AuthenticationFailException.class, (exception, request, response) -> {
             response.status(401);
+            log.trace(request.url() + " - 401: ", exception);
 
             response.body(ApiMessage.of("Authentication fail").toString());
         });
 
         exception(Exception.class, (exception, request, response) -> {
             response.status(500);
+            log.error(request.url() + " - 500: ", exception);
 
             response.body(ApiMessage.of("Server error").toString());
         });

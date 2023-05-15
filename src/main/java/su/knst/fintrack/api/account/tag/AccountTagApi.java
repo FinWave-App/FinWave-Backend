@@ -108,7 +108,7 @@ public class AccountTagApi {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         long tagId = ParamsValidator
-                .longV(request, "noteId")
+                .longV(request, "tagId")
                 .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
                 .matches((id) -> database.tagSafeToDelete(id))
                 .require();

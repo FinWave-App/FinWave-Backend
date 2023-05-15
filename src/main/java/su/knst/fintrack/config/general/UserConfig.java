@@ -25,6 +25,6 @@ public class UserConfig implements GroupedConfig {
         public boolean enabled = false;
 
         public String loginRegexFilter = "^[a-zA-Z0-9_-]+$";
-        public String passwordRegexFilter = "^(?=.*[0-9]).{8,}$";
+        public String passwordRegexFilter = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*\\W)[A-Za-z\\d\\W]{8,}$";
     }
 }
