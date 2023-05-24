@@ -63,7 +63,7 @@ public class CurrencyApi {
 
         List<CurrenciesRecord> records = database.getUserCurrenciesWithRoot(sessionsRecord.getUserId());
 
-        return new GetCurrenciesResponse(records);
+        return new GetCurrenciesResponse(records, sessionsRecord.getUserId());
     }
 
     public Object editCurrencyCode(Request request, Response response) {
@@ -129,13 +129,13 @@ public class CurrencyApi {
     static class GetCurrenciesResponse extends ApiResponse {
         public final List<Entity> currencies;
 
-        public GetCurrenciesResponse(List<CurrenciesRecord> currencies) {
+        public GetCurrenciesResponse(List<CurrenciesRecord> currencies, int userId) {
             this.currencies = currencies.stream()
-                    .map((r) -> new Entity(r.getId(), r.getOwnerId(), r.getCode(), r.getSymbol(), r.getDescription()))
+                    .map((r) -> new Entity(r.getId(), r.getOwnerId() == userId, r.getCode(), r.getSymbol(), r.getDescription()))
                     .toList();
         }
 
-        record Entity(long currencyId, int ownerId, String code, String symbol, String description) {}
+        record Entity(long currencyId, boolean owned, String code, String symbol, String description) {}
     }
 
     static class NewCurrencyResponse extends ApiResponse {

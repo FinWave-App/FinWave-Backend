@@ -87,17 +87,17 @@ public class AccountTagApi {
     public Object editTagDescription(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        String description = ParamsValidator
+        Optional<String> description = ParamsValidator
                 .string(request, "description")
                 .length(1, config.tags.maxDescriptionLength)
-                .require();
+                .optional();
 
         long tagId = ParamsValidator
                 .longV(request, "tagId")
                 .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
                 .require();
 
-        database.editTagDescription(tagId, description);
+        database.editTagDescription(tagId, description.orElse(null));
 
         response.status(200);
 
@@ -130,7 +130,7 @@ public class AccountTagApi {
                     .toList();
         }
 
-        record Entry(long id, String name, String description) {}
+        record Entry(long tagId, String name, String description) {}
     }
 
     static class NewTagResponse extends ApiResponse {

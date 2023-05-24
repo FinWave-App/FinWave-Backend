@@ -190,7 +190,7 @@ public class AccountApi {
                     .toList();
         }
 
-        record Entry(long id, long tagId, long currencyId, BigDecimal amount, boolean hidden, String name, String description) {}
+        record Entry(long accountId, long tagId, long currencyId, BigDecimal amount, boolean hidden, String name, String description) {}
     }
 
     static class NewAccountResponse extends ApiResponse {

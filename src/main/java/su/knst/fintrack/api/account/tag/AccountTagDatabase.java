@@ -39,6 +39,7 @@ public class AccountTagDatabase {
     public List<AccountsTagsRecord> getTags(int userId) {
         return context.selectFrom(ACCOUNTS_TAGS)
                 .where(ACCOUNTS_TAGS.OWNER_ID.eq(userId))
+                .orderBy(ACCOUNTS_TAGS.ID)
                 .fetch();
     }
 

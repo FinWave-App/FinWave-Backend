@@ -4,7 +4,7 @@ import java.util.List;
 
 public class DefaultCurrencies {
     public static final List<DefaultCurrency> LIST = List.of(
-            new DefaultCurrency("USD", "$", "US Dollar"),
+            new DefaultCurrency("USD", "$", "US dollar"),
             new DefaultCurrency("EUR", "€", "Euro"),
             new DefaultCurrency("GBP", "£", "Sterling"),
             new DefaultCurrency("JPY", "¥", "Japanese yen"),
