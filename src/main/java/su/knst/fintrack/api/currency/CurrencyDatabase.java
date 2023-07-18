@@ -21,11 +21,12 @@ public class CurrencyDatabase {
         this.context = database.context();
     }
 
-    public Optional<Long> newCurrency(int ownerId, String code, String symbol, String description) {
+    public Optional<Long> newCurrency(int ownerId, String code, String symbol, short decimals, String description) {
         return context.insertInto(CURRENCIES)
                 .set(CURRENCIES.OWNER_ID, ownerId)
                 .set(CURRENCIES.CODE, code)
                 .set(CURRENCIES.SYMBOL, symbol)
+                .set(CURRENCIES.DECIMALS, decimals)
                 .set(CURRENCIES.DESCRIPTION, description)
                 .returningResult(CURRENCIES.ID)
                 .fetchOptional()

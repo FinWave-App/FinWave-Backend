@@ -28,6 +28,7 @@ public class TransactionDatabase {
             DSLContext transaction = configuration.dsl();
 
             Field<Long> currencyId = transaction.select(ACCOUNTS.CURRENCY_ID)
+                    .from(ACCOUNTS)
                     .where(ACCOUNTS.ID.eq(accountId))
                     .asField();
 
@@ -155,6 +156,7 @@ public class TransactionDatabase {
                     .set(TRANSACTIONS.CREATED_AT, created)
                     .set(TRANSACTIONS.DELTA, delta)
                     .set(TRANSACTIONS.DESCRIPTION, description)
+                    .where(TRANSACTIONS.ID.eq(transactionId))
                     .execute();
         });
     }

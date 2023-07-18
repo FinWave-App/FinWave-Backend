@@ -42,6 +42,11 @@ public class CurrencyApi {
                 .length(1, config.maxSymbolLength)
                 .require();
 
+        int decimals = ParamsValidator
+                .integer(request, "decimals")
+                .range(0, config.maxDecimals)
+                .require();
+
         String description = ParamsValidator
                 .string(request, "description")
                 .length(1, config.maxDescriptionLength)
@@ -50,7 +55,7 @@ public class CurrencyApi {
         if (database.getCurrenciesCount(sessionsRecord.getUserId()) >= config.maxCurrenciesPerUser)
             halt(409);
 
-        Optional<Long> currencyId = database.newCurrency(sessionsRecord.getUserId(), code, symbol, description);
+        Optional<Long> currencyId = database.newCurrency(sessionsRecord.getUserId(), code, symbol, (short) decimals, description);
 
         if (currencyId.isEmpty())
             halt(500);
@@ -131,11 +136,11 @@ public class CurrencyApi {
 
         public GetCurrenciesResponse(List<CurrenciesRecord> currencies, int userId) {
             this.currencies = currencies.stream()
-                    .map((r) -> new Entity(r.getId(), r.getOwnerId() == userId, r.getCode(), r.getSymbol(), r.getDescription()))
+                    .map((r) -> new Entity(r.getId(), r.getOwnerId() == userId, r.getCode(), r.getSymbol(), r.getDecimals(), r.getDescription()))
                     .toList();
         }
 
-        record Entity(long currencyId, boolean owned, String code, String symbol, String description) {}
+        record Entity(long currencyId, boolean owned, String code, String symbol, short decimals, String description) {}
     }
 
     static class NewCurrencyResponse extends ApiResponse {

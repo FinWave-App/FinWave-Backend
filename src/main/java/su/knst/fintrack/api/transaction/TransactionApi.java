@@ -48,7 +48,7 @@ public class TransactionApi {
                 .require();
 
         OffsetDateTime time = ParamsValidator
-                .string(request, "created")
+                .string(request, "createdAt")
                 .map(OffsetDateTime::parse);
 
         BigDecimal delta = ParamsValidator
@@ -108,7 +108,7 @@ public class TransactionApi {
                 .require();
 
         OffsetDateTime time = ParamsValidator
-                .string(request, "created")
+                .string(request, "createdAt")
                 .map(OffsetDateTime::parse);
 
         BigDecimal delta = ParamsValidator
@@ -141,8 +141,8 @@ public class TransactionApi {
                 .require();
 
         TransactionsFilter filter = new TransactionsFilter(
-                request.queryParams("tagsId"),
-                request.queryParams("accountsId"),
+                request.queryParams("tagsIds"),
+                request.queryParams("accountsIds"),
                 request.queryParams("currenciesIds"),
                 request.queryParams("fromTime"),
                 request.queryParams("toTime"),
@@ -172,7 +172,7 @@ public class TransactionApi {
                     .toList();
         }
 
-        record Entity(long id, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {}
+        record Entity(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {}
     }
     static class NewTransactionResponse extends ApiResponse {
         public final long transactionId;

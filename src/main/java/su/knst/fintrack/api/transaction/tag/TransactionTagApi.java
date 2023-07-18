@@ -2,6 +2,8 @@ package su.knst.fintrack.api.transaction.tag;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.jooq.Binding;
+import org.jooq.postgres.extensions.types.Ltree;
 import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
@@ -124,7 +126,7 @@ public class TransactionTagApi {
         return ApiMessage.of("Tag expected amount edited");
     }
 
-    public Object editTagParentId(Request request, Response response) {
+    public Object editTagParent(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         long tagId = ParamsValidator
@@ -132,15 +134,34 @@ public class TransactionTagApi {
                 .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
                 .require();
 
-        Long parentId = ParamsValidator
+        Optional<Long> parentId = ParamsValidator
                 .longV(request, "parentId")
                 .matches((id) -> tagId != id)
                 .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
-                .require();
+                .matches((id) -> database.newParentIsSafe(tagId, id))
+                .optional();
+
+        if (parentId.isEmpty()) {
+            Boolean toRoot = ParamsValidator
+                    .string(request, "setToRoot")
+                    .map(Boolean::parseBoolean);
+
+            if (!toRoot) {
+                response.status(400);
+
+                return ApiMessage.of("Bad request");
+            }
+
+            response.status(200);
+
+            database.setParentToRoot(tagId);
+
+            return ApiMessage.of("Tag parent edited");
+        }
+
+        database.editTagParentId(tagId, parentId.get());
 
         response.status(200);
-
-        database.editTagParentId(tagId, parentId);
 
         return ApiMessage.of("Tag parent edited");
     }
@@ -189,13 +210,14 @@ public class TransactionTagApi {
         public final List<Entry> tags;
 
         public GetTagsResponse(List<TransactionsTagsRecord> records) {
+
             this.tags = records
                     .stream()
-                    .map((r) -> new Entry(r.getId(), r.getType(), r.getExpectedAmount(), r.getParentId(), r.getName(), r.getDescription()))
+                    .map((r) -> new Entry(r.getId(), r.getType(), r.getExpectedAmount(), r.getParentsTree().toString(), r.getName(), r.getDescription()))
                     .toList();
         }
 
-        record Entry(long id, short type, BigDecimal expectedAmount, Long parentId, String name, String description) {}
+        record Entry(long tagId, short type, BigDecimal expectedAmount, String parentsTree, String name, String description) {}
     }
 
     static class NewTagResponse extends ApiResponse {

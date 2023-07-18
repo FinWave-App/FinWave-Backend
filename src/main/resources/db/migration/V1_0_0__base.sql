@@ -1,3 +1,5 @@
+create extension ltree;
+
 create table if not exists users
 (
     id            serial primary key,
@@ -66,7 +68,7 @@ create table if not exists transactions_tags
     owner_id              integer not null references users(id),
     type                  smallint not null,
     expected_amount       numeric not null,
-    parent_id             bigint references transactions_tags(id),
+    parents_tree          ltree not null,
     name                  text not null,
     description           text
 );
@@ -81,6 +83,7 @@ create table if not exists currencies
     owner_id              integer not null references users(id),
     code                  text not null,
     symbol                text not null,
+    decimals              smallint not null,
     description           text not null
 );
 

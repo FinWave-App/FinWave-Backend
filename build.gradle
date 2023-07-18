@@ -33,6 +33,7 @@ dependencies {
     implementation 'org.jooq:jooq:3.18.3'
     implementation 'org.jooq:jooq-codegen-maven:3.18.3'
     implementation 'org.jooq:jooq-meta:3.18.3'
+    implementation 'org.jooq:jooq-postgres-extensions:3.18.3'
 
     implementation 'com.google.inject:guice:5.1.0'
     implementation 'com.google.code.gson:gson:2.10.1'
@@ -95,6 +96,16 @@ jooq {
                                 name = 'varchar'
                                 includeExpression = '.*'
                                 includeTypes = 'INET'
+                            }
+                            forcedType {
+                                userType = 'org.jooq.postgres.extensions.types.Ltree'
+                                binding = 'org.jooq.postgres.extensions.bindings.LtreeBinding'
+                                includeTypes = 'ltree'
+                            }
+                            forcedType {
+                                userType = 'org.jooq.postgres.extensions.types.Ltree[]'
+                                binding = 'org.jooq.postgres.extensions.bindings.LtreeArrayBinding'
+                                includeTypes = '_ltree'
                             }
                         }
                     }

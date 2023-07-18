@@ -141,12 +141,12 @@ public class AccountApi {
                 .matches((id) -> database.userOwnAccount(sessionsRecord.getUserId(), id))
                 .require();
 
-        String description = ParamsValidator
+        Optional<String> description = ParamsValidator
                 .string(request, "description")
                 .length(1, config.maxDescriptionLength)
-                .require();
+                .optional();
 
-        database.editAccountDescription(accountId, description);
+        database.editAccountDescription(accountId, description.orElse(null));
 
         response.status(200);
 

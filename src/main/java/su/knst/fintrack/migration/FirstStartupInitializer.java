@@ -46,6 +46,6 @@ public class FirstStartupInitializer {
             return;
 
         for (DefaultCurrencies.DefaultCurrency currency : DefaultCurrencies.LIST)
-            currencyDatabase.newCurrency(1, currency.code(), currency.symbol(), currency.description());
+            currencyDatabase.newCurrency(1, currency.code(), currency.symbol(), (short) currency.decimals(), currency.description());
     }
 }

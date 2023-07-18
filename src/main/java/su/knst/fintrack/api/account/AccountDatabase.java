@@ -71,6 +71,7 @@ public class AccountDatabase {
     public List<AccountsRecord> getAccounts(int userId) {
         return context.selectFrom(ACCOUNTS)
                 .where(ACCOUNTS.OWNER_ID.eq(userId))
+                .orderBy(ACCOUNTS.ID)
                 .fetch();
     }
 

@@ -4,7 +4,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
+import org.jooq.impl.DSL;
+import org.jooq.postgres.extensions.types.Ltree;
 import su.knst.fintrack.database.Database;
+import su.knst.fintrack.jooq.tables.TransactionsTags;
 import su.knst.fintrack.jooq.tables.records.TransactionsTagsRecord;
 
 import java.math.BigDecimal;
@@ -24,11 +27,25 @@ public class TransactionTagDatabase {
     }
 
     public Optional<Long> newTag(int userId, short type, BigDecimal expectedAmount, Long parentId, String name, String description) {
+        TagTree tree;
+
+        if (parentId != null){
+            TransactionsTagsRecord parent = context.selectFrom(TRANSACTIONS_TAGS)
+                    .where(TRANSACTIONS_TAGS.ID.eq(parentId))
+                    .fetchOptional()
+                    .orElseThrow();
+
+            tree = TagTree.of(parent.getParentsTree());
+            tree.append(parentId);
+        }else {
+            tree = TagTree.empty();
+        }
+
         return context.insertInto(TRANSACTIONS_TAGS)
                 .set(TRANSACTIONS_TAGS.OWNER_ID, userId)
                 .set(TRANSACTIONS_TAGS.TYPE, type)
                 .set(TRANSACTIONS_TAGS.EXPECTED_AMOUNT, expectedAmount)
-                .set(TRANSACTIONS_TAGS.PARENT_ID, parentId)
+                .set(TRANSACTIONS_TAGS.PARENTS_TREE, tree.toLtree())
                 .set(TRANSACTIONS_TAGS.NAME, name)
                 .set(TRANSACTIONS_TAGS.DESCRIPTION, description)
                 .returningResult(TRANSACTIONS_TAGS.ID)
@@ -39,6 +56,7 @@ public class TransactionTagDatabase {
     public List<TransactionsTagsRecord> getTags(int userId) {
         return context.selectFrom(TRANSACTIONS_TAGS)
                 .where(TRANSACTIONS_TAGS.OWNER_ID.eq(userId))
+                .orderBy(TRANSACTIONS_TAGS.ID)
                 .fetch();
     }
 
@@ -73,9 +91,41 @@ public class TransactionTagDatabase {
                 .execute();
     }
 
+    public boolean newParentIsSafe(long tagId, long parentId) {
+        TagTree tree = context.select(TRANSACTIONS_TAGS.PARENTS_TREE)
+                .from(TRANSACTIONS_TAGS)
+                .where(TRANSACTIONS_TAGS.ID.eq(parentId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .map(TagTree::of)
+                .orElseThrow();
+
+        if (tree.contains(tagId))
+            return false;
+
+        int tagChilds = context.fetchCount(TRANSACTIONS_TAGS,
+                TRANSACTIONS_TAGS.PARENTS_TREE.contains(Ltree.ltree(String.valueOf(tagId))));
+
+        return tagChilds == 0;
+    }
+
     public void editTagParentId(long tagId, long parentId) {
+        TransactionsTagsRecord parent = context.selectFrom(TRANSACTIONS_TAGS)
+                .where(TRANSACTIONS_TAGS.ID.eq(parentId))
+                .fetchOptional()
+                .orElseThrow();
+
+        TagTree tree = TagTree.of(parent.getParentsTree()).append(parentId);
+
         context.update(TRANSACTIONS_TAGS)
-                .set(TRANSACTIONS_TAGS.PARENT_ID, parentId)
+                .set(TRANSACTIONS_TAGS.PARENTS_TREE, tree.toLtree())
+                .where(TRANSACTIONS_TAGS.ID.eq(tagId))
+                .execute();
+    }
+
+    public void setParentToRoot(long tagId) {
+        context.update(TRANSACTIONS_TAGS)
+                .set(TRANSACTIONS_TAGS.PARENTS_TREE, TagTree.empty().toLtree())
                 .where(TRANSACTIONS_TAGS.ID.eq(tagId))
                 .execute();
     }
