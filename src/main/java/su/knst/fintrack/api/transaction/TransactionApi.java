@@ -127,6 +127,25 @@ public class TransactionApi {
         return ApiMessage.of("Transaction edited");
     }
 
+    public Object getTransactionsCount(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        TransactionsFilter filter = new TransactionsFilter(
+                request.queryParams("tagsIds"),
+                request.queryParams("accountsIds"),
+                request.queryParams("currenciesIds"),
+                request.queryParams("fromTime"),
+                request.queryParams("toTime"),
+                request.queryParams("description")
+        );
+
+        int count = database.getTransactionsCount(sessionsRecord.getUserId(), filter);
+
+        response.status(200);
+
+        return new TransactionsCountResponse(count);
+    }
+
     public Object getTransactions(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
@@ -174,6 +193,15 @@ public class TransactionApi {
 
         record Entity(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {}
     }
+
+    static class TransactionsCountResponse extends ApiResponse {
+        public final int count;
+
+        public TransactionsCountResponse(int count) {
+            this.count = count;
+        }
+    }
+
     static class NewTransactionResponse extends ApiResponse {
         public final long transactionId;
 

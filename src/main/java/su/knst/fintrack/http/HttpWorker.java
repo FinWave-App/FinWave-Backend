@@ -113,6 +113,7 @@ public class HttpWorker {
                 });
 
                 get("/getList", transactionApi::getTransactions);
+                get("/getCount", transactionApi::getTransactionsCount);
                 post("/new", transactionApi::newTransaction);
                 post("/edit", transactionApi::editTransaction);
                 post("/delete", transactionApi::deleteTransaction);

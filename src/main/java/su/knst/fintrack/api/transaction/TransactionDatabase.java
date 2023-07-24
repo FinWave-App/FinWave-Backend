@@ -78,7 +78,28 @@ public class TransactionDatabase {
         });
     }
 
+    public int getTransactionsCount(int userId, TransactionsFilter filter) {
+        Condition condition = generateFilterCondition(userId, filter);
+
+        return context.selectCount()
+                .from(TRANSACTIONS)
+                .where(condition)
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElse(0);
+    }
+
     public List<TransactionsRecord> getTransactions(int userId, int offset, int count, TransactionsFilter filter) {
+        Condition condition = generateFilterCondition(userId, filter);
+
+        return context.selectFrom(TRANSACTIONS)
+                .where(condition)
+                .orderBy(TRANSACTIONS.CREATED_AT.desc(), TRANSACTIONS.ID.desc())
+                .limit(offset, count)
+                .fetch();
+    }
+
+    protected Condition generateFilterCondition(int userId, TransactionsFilter filter) {
         Condition condition = TRANSACTIONS.OWNER_ID.eq(userId);
 
         if (filter.getTagsIds() != null)
@@ -99,11 +120,7 @@ public class TransactionDatabase {
         if (filter.getDescriptionContains() != null)
             condition = condition.and(TRANSACTIONS.DESCRIPTION.contains(filter.getDescriptionContains()));
 
-        return context.selectFrom(TRANSACTIONS)
-                .where(condition)
-                .orderBy(TRANSACTIONS.CREATED_AT.desc(), TRANSACTIONS.ID.desc())
-                .limit(offset, count)
-                .fetch();
+        return condition;
     }
 
     protected <T> Condition generateFilterAnyCondition(TableField<?, T> field, List<T> values) {
