@@ -111,6 +111,26 @@ public class CurrencyApi {
         return ApiMessage.of("Currency symbol edited");
     }
 
+    public Object editCurrencyDecimals(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        long currencyId = ParamsValidator
+                .longV(request, "currencyId")
+                .matches((id) -> database.userCanEditCurrency(sessionsRecord.getUserId(), id))
+                .require();
+
+        int decimals = ParamsValidator
+                .integer(request, "decimals")
+                .range(1, config.maxDecimals)
+                .require();
+
+        database.editCurrencyDecimals(currencyId, (short) decimals);
+
+        response.status(200);
+
+        return ApiMessage.of("Currency description edited");
+    }
+
     public Object editCurrencyDescription(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 

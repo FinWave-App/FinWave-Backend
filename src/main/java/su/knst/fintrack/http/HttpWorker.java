@@ -81,6 +81,7 @@ public class HttpWorker {
                 post("/editSymbol", currencyApi::editCurrencySymbol);
                 post("/editCode", currencyApi::editCurrencyCode);
                 post("/editDescription", currencyApi::editCurrencyDescription);
+                post("/editDecimals", currencyApi::editCurrencyDecimals);
             });
 
             path("/accounts", () -> {

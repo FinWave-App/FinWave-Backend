@@ -47,6 +47,13 @@ public class CurrencyDatabase {
                 .execute();
     }
 
+    public void editCurrencyDecimals(long currencyId, short decimals) {
+        context.update(CURRENCIES)
+                .set(CURRENCIES.DECIMALS, decimals)
+                .where(CURRENCIES.ID.eq(currencyId))
+                .execute();
+    }
+
     public void editCurrencyDescription(long currencyId, String description) {
         context.update(CURRENCIES)
                 .set(CURRENCIES.DESCRIPTION, description)
@@ -58,6 +65,7 @@ public class CurrencyDatabase {
         return context
                 .selectFrom(CURRENCIES)
                 .where(CURRENCIES.OWNER_ID.eq(userId).and(CURRENCIES.OWNER_ID.eq(1)))
+                .orderBy(CURRENCIES.ID)
                 .fetch();
     }
 
