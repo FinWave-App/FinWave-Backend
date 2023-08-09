@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.fintrack.api.account.AccountApi;
 import su.knst.fintrack.api.account.tag.AccountTagApi;
+import su.knst.fintrack.api.analytics.AnalyticsApi;
 import su.knst.fintrack.api.auth.AuthApi;
 import su.knst.fintrack.api.auth.AuthenticationFailException;
 import su.knst.fintrack.api.config.ConfigApi;
@@ -33,6 +34,7 @@ public class HttpWorker {
     protected CurrencyApi currencyApi;
     protected TransactionApi transactionApi;
     protected TransactionTagApi transactionTagApi;
+    protected AnalyticsApi analyticsApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -44,7 +46,8 @@ public class HttpWorker {
                       AccountApi accountApi,
                       CurrencyApi currencyApi,
                       TransactionApi transactionApi,
-                      TransactionTagApi transactionTagApi) {
+                      TransactionTagApi transactionTagApi,
+                      AnalyticsApi analyticsApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -56,6 +59,7 @@ public class HttpWorker {
         this.currencyApi = currencyApi;
         this.transactionApi = transactionApi;
         this.transactionTagApi = transactionTagApi;
+        this.analyticsApi = analyticsApi;
 
         setup();
         patches();
@@ -118,6 +122,11 @@ public class HttpWorker {
                 post("/new", transactionApi::newTransaction);
                 post("/edit", transactionApi::editTransaction);
                 post("/delete", transactionApi::deleteTransaction);
+            });
+
+            path("/analytics", () -> {
+                get("/getByMonths", analyticsApi::getAnalyticsByMonths);
+                get("/getByDays", analyticsApi::getAnalyticsByDays);
             });
         });
 

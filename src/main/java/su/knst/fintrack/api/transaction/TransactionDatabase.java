@@ -3,6 +3,7 @@ package su.knst.fintrack.api.transaction;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.*;
+import su.knst.fintrack.api.transaction.filter.TransactionsFilter;
 import su.knst.fintrack.database.Database;
 import su.knst.fintrack.jooq.tables.records.TransactionsRecord;
 
@@ -99,7 +100,7 @@ public class TransactionDatabase {
                 .fetch();
     }
 
-    protected Condition generateFilterCondition(int userId, TransactionsFilter filter) {
+    public Condition generateFilterCondition(int userId, TransactionsFilter filter) {
         Condition condition = TRANSACTIONS.OWNER_ID.eq(userId);
 
         if (filter.getTagsIds() != null)
@@ -118,7 +119,7 @@ public class TransactionDatabase {
             condition = condition.and(TRANSACTIONS.CREATED_AT.lessOrEqual(filter.getToTime()));
 
         if (filter.getDescriptionContains() != null)
-            condition = condition.and(TRANSACTIONS.DESCRIPTION.contains(filter.getDescriptionContains()));
+            condition = condition.and(TRANSACTIONS.DESCRIPTION.containsIgnoreCase(filter.getDescriptionContains()));
 
         return condition;
     }

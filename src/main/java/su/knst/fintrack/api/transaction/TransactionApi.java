@@ -6,6 +6,7 @@ import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
 import su.knst.fintrack.api.account.AccountDatabase;
+import su.knst.fintrack.api.transaction.filter.TransactionsFilter;
 import su.knst.fintrack.api.transaction.tag.TransactionTagDatabase;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.app.TransactionConfig;
@@ -130,14 +131,7 @@ public class TransactionApi {
     public Object getTransactionsCount(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        TransactionsFilter filter = new TransactionsFilter(
-                request.queryParams("tagsIds"),
-                request.queryParams("accountsIds"),
-                request.queryParams("currenciesIds"),
-                request.queryParams("fromTime"),
-                request.queryParams("toTime"),
-                request.queryParams("description")
-        );
+        TransactionsFilter filter = new TransactionsFilter(request);
 
         int count = database.getTransactionsCount(sessionsRecord.getUserId(), filter);
 
@@ -159,14 +153,7 @@ public class TransactionApi {
                 .range(1, config.maxTransactionsInListPerRequest)
                 .require();
 
-        TransactionsFilter filter = new TransactionsFilter(
-                request.queryParams("tagsIds"),
-                request.queryParams("accountsIds"),
-                request.queryParams("currenciesIds"),
-                request.queryParams("fromTime"),
-                request.queryParams("toTime"),
-                request.queryParams("description")
-        );
+        TransactionsFilter filter = new TransactionsFilter(request);
 
         List<TransactionsRecord> records = database.getTransactions(sessionsRecord.getUserId(), offset, count, filter);
 

@@ -1,5 +1,6 @@
-package su.knst.fintrack.api.transaction;
+package su.knst.fintrack.api.transaction.filter;
 
+import spark.Request;
 import su.knst.fintrack.utils.params.ParamsValidator;
 
 import java.time.OffsetDateTime;
@@ -42,6 +43,22 @@ public class TransactionsFilter {
         this.descriptionContains = descriptionContains;
     }
 
+    public TransactionsFilter(Request request) {
+        this(request.queryParams("tagsIds"),
+                request.queryParams("accountsIds"),
+                request.queryParams("currenciesIds"),
+                request.queryParams("fromTime"),
+                request.queryParams("toTime"),
+                request.queryParams("description"));
+    }
+
+    public boolean validateTime(double maxDaysRange) {
+        if (fromTime == null || toTime == null)
+            return false;
+
+        return fromTime.isBefore(toTime) && ((toTime.toEpochSecond() - fromTime.toEpochSecond()) / 86400d <= maxDaysRange);
+    }
+
     protected List<Long> parseIds(String raw) {
         if (raw == null)
             return null;
@@ -76,5 +93,29 @@ public class TransactionsFilter {
 
     public String getDescriptionContains() {
         return descriptionContains;
+    }
+
+    public void setTagsIds(List<Long> tagsIds) {
+        this.tagsIds = tagsIds;
+    }
+
+    public void setAccountIds(List<Long> accountIds) {
+        this.accountIds = accountIds;
+    }
+
+    public void setCurrenciesIds(List<Long> currenciesIds) {
+        this.currenciesIds = currenciesIds;
+    }
+
+    public void setFromTime(OffsetDateTime fromTime) {
+        this.fromTime = fromTime;
+    }
+
+    public void setToTime(OffsetDateTime toTime) {
+        this.toTime = toTime;
+    }
+
+    public void setDescriptionContains(String descriptionContains) {
+        this.descriptionContains = descriptionContains;
     }
 }

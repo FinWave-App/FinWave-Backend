@@ -7,10 +7,7 @@ import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
 import su.knst.fintrack.config.Configs;
-import su.knst.fintrack.config.app.AccountsConfig;
-import su.knst.fintrack.config.app.CurrencyConfig;
-import su.knst.fintrack.config.app.NotesConfig;
-import su.knst.fintrack.config.app.TransactionConfig;
+import su.knst.fintrack.config.app.*;
 import su.knst.fintrack.config.general.UserConfig;
 
 @Singleton
@@ -25,7 +22,8 @@ public class ConfigApi {
                 configs.getState(new AccountsConfig()),
                 configs.getState(new CurrencyConfig()),
                 configs.getState(new NotesConfig()),
-                configs.getState(new TransactionConfig())
+                configs.getState(new TransactionConfig()),
+                configs.getState(new AnalyticsConfig())
         );
 
         this.authConfigJson = ApiResponse.GSON.toJson(publicConfigs);
@@ -40,5 +38,5 @@ public class ConfigApi {
         return hash;
     }
 
-    record PublicConfigs(UserConfig users, AccountsConfig accounts, CurrencyConfig currencies, NotesConfig notes, TransactionConfig transactions) { }
+    record PublicConfigs(UserConfig users, AccountsConfig accounts, CurrencyConfig currencies, NotesConfig notes, TransactionConfig transactions, AnalyticsConfig analytics) { }
 }

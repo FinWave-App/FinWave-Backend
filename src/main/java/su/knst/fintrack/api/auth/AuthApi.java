@@ -44,12 +44,15 @@ public class AuthApi {
         if (request.requestMethod().equals("OPTIONS"))
             return;
 
-        String token = ParamsValidator
+        Optional<String> token = ParamsValidator
                 .string(request.headers("Authorization"))
                 .matches((s) -> s.startsWith("Bearer "))
-                .map((s -> s.replace("Bearer ", "")));
+                .mapOptional((s -> s.replace("Bearer ", "")));
 
-        Optional<UsersSessionsRecord> sessionsRecord = database.authUser(token);
+        if (token.isEmpty())
+            throw new AuthenticationFailException();
+
+        Optional<UsersSessionsRecord> sessionsRecord = database.authUser(token.get());
 
         if (sessionsRecord.isEmpty())
             throw new AuthenticationFailException();

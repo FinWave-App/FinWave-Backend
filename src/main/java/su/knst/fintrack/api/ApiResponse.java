@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 public abstract class ApiResponse {
@@ -12,6 +13,10 @@ public abstract class ApiResponse {
             .registerTypeAdapter(OffsetDateTime.class, (JsonDeserializer<OffsetDateTime>)
                     (j, t, c) -> OffsetDateTime.parse(j.getAsString()))
             .registerTypeAdapter(OffsetDateTime.class, (JsonSerializer<OffsetDateTime>)
+                    (o, t, c) -> c.serialize(o.toString()))
+            .registerTypeAdapter(LocalDate.class, (JsonDeserializer<LocalDate>)
+                    (j, t, c) -> LocalDate.parse(j.getAsString()))
+            .registerTypeAdapter(LocalDate.class, (JsonSerializer<LocalDate>)
                     (o, t, c) -> c.serialize(o.toString()))
             .create();
 
