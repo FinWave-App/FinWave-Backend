@@ -35,8 +35,9 @@ public class NoteApi {
 
     public Object newNote(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
+
         Optional<OffsetDateTime> time = ParamsValidator
-                .string(request, "notification_time")
+                .string(request, "notificationTime")
                 .optional()
                 .map(OffsetDateTime::parse);
 
@@ -63,14 +64,14 @@ public class NoteApi {
     public Object editNote(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        String text = ParamsValidator
-                .string(request, "text")
-                .length(1, config.maxNoteLength)
-                .require();
-
         long noteId = ParamsValidator
                 .longV(request, "noteId")
                 .matches((id) -> database.userOwnNote(sessionsRecord.getUserId(), id))
+                .require();
+
+        String text = ParamsValidator
+                .string(request, "text")
+                .length(1, config.maxNoteLength)
                 .require();
 
         database.editNote(noteId, text);
@@ -84,7 +85,7 @@ public class NoteApi {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         OffsetDateTime time = ParamsValidator
-                .string(request, "notification_time")
+                .string(request, "notificationTime")
                 .optional()
                 .map(OffsetDateTime::parse)
                 .orElse(null);
@@ -122,42 +123,17 @@ public class NoteApi {
     public Object getNotesList(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        int offset = ParamsValidator
-                .integer(request, "offset")
-                .range(0, Integer.MAX_VALUE)
-                .require();
-
-        int count = ParamsValidator
-                .integer(request, "count")
-                .range(1, config.maxNotesInListPerRequest)
-                .require();
-
-        List<NotesRecord> records = database.getNotes(sessionsRecord.getUserId(), offset, count);
+        List<NotesRecord> records = database.getNotes(sessionsRecord.getUserId());
 
         response.status(200);
 
         return new GetNotesListResponse(records);
     }
 
-    public Object findNote(Request request, Response response) {
+    public Object getImportantNotes(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        int offset = ParamsValidator
-                .integer(request, "offset")
-                .range(0, Integer.MAX_VALUE)
-                .require();
-
-        int count = ParamsValidator
-                .integer(request, "count")
-                .range(1, config.maxNotesInListPerRequest)
-                .require();
-
-        String filter = ParamsValidator
-                .string(request, "filter")
-                .length(1, config.maxNoteLength)
-                .require();
-
-        List<NotesRecord> records = database.findNote(sessionsRecord.getUserId(), filter, offset, count);
+        List<NotesRecord> records = database.getImportantNotes(sessionsRecord.getUserId());
 
         response.status(200);
 
@@ -185,19 +161,21 @@ public class NoteApi {
         public GetNotesListResponse(List<NotesRecord> records) {
             this.notes = records
                     .stream()
-                    .map(v -> new Entry(v.getId(), v.getNotificationTime(), v.getNote()))
+                    .map(v -> new Entry(v.getId(), v.getNotificationTime(), v.getLastEdit(), v.getNote()))
                     .toList();
         }
 
-        record Entry(long id, OffsetDateTime notificationTime, String text) {}
+        record Entry(long noteId, OffsetDateTime notificationTime, OffsetDateTime lastEdit, String text) {}
     }
 
     static class GetNoteResponse extends ApiResponse {
         public final OffsetDateTime notificationTime;
+        public final OffsetDateTime lastEdit;
         public final String text;
 
         public GetNoteResponse(NotesRecord record) {
             this.notificationTime = record.getNotificationTime();
+            this.lastEdit = record.getLastEdit();
             this.text = record.getNote();
         }
     }

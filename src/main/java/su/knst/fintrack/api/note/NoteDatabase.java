@@ -11,6 +11,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.jooq.impl.DSL.currentOffsetDateTime;
+import static org.jooq.impl.DSL.when;
 import static su.knst.fintrack.jooq.Tables.NOTES;
 
 public class NoteDatabase {
@@ -58,11 +60,14 @@ public class NoteDatabase {
                 .fetch();
     }
 
-    public List<NotesRecord> getNotes(int userId, int offset, int count) {
+    public List<NotesRecord> getImportantNotes(int userId) {
         return context.selectFrom(NOTES)
                 .where(NOTES.OWNER_ID.eq(userId))
-                .orderBy(NOTES.LAST_EDIT.desc(), NOTES.ID.desc())
-                .limit(offset, count)
+                .orderBy(
+                        when(NOTES.NOTIFICATION_TIME.isNotNull().and(NOTES.NOTIFICATION_TIME.greaterOrEqual(currentOffsetDateTime())), NOTES.NOTIFICATION_TIME).asc(),
+                        when(NOTES.NOTIFICATION_TIME.isNull().or(NOTES.NOTIFICATION_TIME.lessThan(currentOffsetDateTime())), NOTES.LAST_EDIT).desc()
+                )
+                .limit(10)
                 .fetch();
     }
 
@@ -72,16 +77,6 @@ public class NoteDatabase {
                 .where(NOTES.OWNER_ID.eq(userId).and(NOTES.ID.eq(noteId)))
                 .fetchOptional()
                 .isPresent();
-    }
-
-    public List<NotesRecord> findNote(int userId, String containsText, int offset, int count) {
-        return context.selectFrom(NOTES)
-                .where(NOTES.OWNER_ID.eq(userId)
-                        .and(NOTES.NOTE.contains(containsText))
-                )
-                .orderBy(NOTES.LAST_EDIT.desc(), NOTES.ID.desc())
-                .limit(offset, count)
-                .fetch();
     }
 
     public void editNote(long id, String newText) {

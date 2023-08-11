@@ -72,7 +72,7 @@ public class HttpWorker {
             path("/notes", () -> {
                 get("/get", noteApi::getNote);
                 get("/getList", noteApi::getNotesList);
-                get("/find", noteApi::findNote);
+                get("/getImportant", noteApi::getImportantNotes);
                 post("/new", noteApi::newNote);
                 post("/edit", noteApi::editNote);
                 post("/editTime", noteApi::editNoteNotificationTime);
