@@ -111,7 +111,6 @@ public class HttpWorker {
                     get("/getList", transactionTagApi::getTags);
                     post("/new", transactionTagApi::newTag);
                     post("/editType", transactionTagApi::editTagType);
-                    post("/editExpectedAmount", transactionTagApi::editTagExpectedAmount);
                     post("/editParent", transactionTagApi::editTagParent);
                     post("/editName", transactionTagApi::editTagName);
                     post("/editDescription", transactionTagApi::editTagDescription);

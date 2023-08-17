@@ -26,7 +26,7 @@ public class TransactionTagDatabase {
         this.context = database.context();
     }
 
-    public Optional<Long> newTag(int userId, short type, BigDecimal expectedAmount, Long parentId, String name, String description) {
+    public Optional<Long> newTag(int userId, short type, Long parentId, String name, String description) {
         TagTree tree;
 
         if (parentId != null){
@@ -44,7 +44,6 @@ public class TransactionTagDatabase {
         return context.insertInto(TRANSACTIONS_TAGS)
                 .set(TRANSACTIONS_TAGS.OWNER_ID, userId)
                 .set(TRANSACTIONS_TAGS.TYPE, type)
-                .set(TRANSACTIONS_TAGS.EXPECTED_AMOUNT, expectedAmount)
                 .set(TRANSACTIONS_TAGS.PARENTS_TREE, tree.toLtree())
                 .set(TRANSACTIONS_TAGS.NAME, name)
                 .set(TRANSACTIONS_TAGS.DESCRIPTION, description)
@@ -80,13 +79,6 @@ public class TransactionTagDatabase {
     public void editTagType(long tagId, short type) {
         context.update(TRANSACTIONS_TAGS)
                 .set(TRANSACTIONS_TAGS.TYPE, type)
-                .where(TRANSACTIONS_TAGS.ID.eq(tagId))
-                .execute();
-    }
-
-    public void editTagExpectedAmount(long tagId, BigDecimal amount) {
-        context.update(TRANSACTIONS_TAGS)
-                .set(TRANSACTIONS_TAGS.EXPECTED_AMOUNT, amount)
                 .where(TRANSACTIONS_TAGS.ID.eq(tagId))
                 .execute();
     }

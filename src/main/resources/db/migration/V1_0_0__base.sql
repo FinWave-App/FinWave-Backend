@@ -67,7 +67,6 @@ create table if not exists transactions_tags
     id                    bigserial primary key,
     owner_id              integer not null references users(id),
     type                  smallint not null,
-    expected_amount       numeric not null,
     parents_tree          ltree not null,
     name                  text not null,
     description           text

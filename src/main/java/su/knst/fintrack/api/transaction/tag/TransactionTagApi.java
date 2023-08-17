@@ -39,10 +39,6 @@ public class TransactionTagApi {
                 .range(-1,1)
                 .require();
 
-        BigDecimal expectedAmount = ParamsValidator
-                .string(request, "expectedAmount")
-                .map(BigDecimal::new);
-
         Optional<Long> parentId = ParamsValidator
                 .longV(request, "parentId")
                 .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
@@ -63,7 +59,6 @@ public class TransactionTagApi {
 
         Optional<Long> tagId = database.newTag(sessionsRecord.getUserId(),
                 (short) type,
-                expectedAmount,
                 parentId.orElse(null),
                 name,
                 description.orElse(null)
@@ -105,25 +100,6 @@ public class TransactionTagApi {
         database.editTagType(tagId, (short) type);
 
         return ApiMessage.of("Tag type edited");
-    }
-
-    public Object editTagExpectedAmount(Request request, Response response) {
-        UsersSessionsRecord sessionsRecord = request.attribute("session");
-
-        long tagId = ParamsValidator
-                .longV(request, "tagId")
-                .matches((id) -> database.userOwnTag(sessionsRecord.getUserId(), id))
-                .require();
-
-        BigDecimal expectedAmount = ParamsValidator
-                .string(request, "expectedAmount")
-                .map(BigDecimal::new);
-
-        response.status(200);
-
-        database.editTagExpectedAmount(tagId, expectedAmount);
-
-        return ApiMessage.of("Tag expected amount edited");
     }
 
     public Object editTagParent(Request request, Response response) {
@@ -208,16 +184,15 @@ public class TransactionTagApi {
 
     static class GetTagsResponse extends ApiResponse {
         public final List<Entry> tags;
-
         public GetTagsResponse(List<TransactionsTagsRecord> records) {
 
             this.tags = records
                     .stream()
-                    .map((r) -> new Entry(r.getId(), r.getType(), r.getExpectedAmount(), r.getParentsTree().toString(), r.getName(), r.getDescription()))
+                    .map((r) -> new Entry(r.getId(), r.getType(), r.getParentsTree().toString(), r.getName(), r.getDescription()))
                     .toList();
         }
 
-        record Entry(long tagId, short type, BigDecimal expectedAmount, String parentsTree, String name, String description) {}
+        record Entry(long tagId, short type, String parentsTree, String name, String description) {}
     }
 
     static class NewTagResponse extends ApiResponse {
