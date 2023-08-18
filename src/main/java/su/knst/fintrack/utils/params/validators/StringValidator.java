@@ -3,8 +3,12 @@ package su.knst.fintrack.utils.params.validators;
 import java.util.function.Function;
 
 public class StringValidator extends AbstractValidator<String> {
+    public StringValidator(String raw, String name) {
+        super(raw, name);
+    }
+
     public StringValidator(String raw) {
-        super(raw);
+        super(raw, null);
     }
 
     public StringValidator length(int from, int to) {

@@ -1,17 +1,21 @@
 package su.knst.fintrack.utils.params.validators;
 
+import su.knst.fintrack.utils.params.InvalidParameterException;
+
 import java.util.Optional;
 import java.util.function.Function;
 
 public abstract class AbstractValidator<T> {
     protected T raw;
+    protected String name;
 
-    protected AbstractValidator(T raw) {
+    protected AbstractValidator(T raw, String name) {
         this.raw = raw;
+        this.name = name;
     }
 
     protected void invalid() {
-        throw new IllegalArgumentException();
+        throw name == null ? new InvalidParameterException() : new InvalidParameterException(name);
     }
 
     public Optional<T> optional() {

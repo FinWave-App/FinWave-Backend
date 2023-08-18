@@ -17,6 +17,7 @@ import su.knst.fintrack.api.transaction.tag.TransactionTagApi;
 import su.knst.fintrack.api.user.UserApi;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.general.HttpConfig;
+import su.knst.fintrack.utils.params.InvalidParameterException;
 
 import static spark.Spark.*;
 
@@ -164,6 +165,13 @@ public class HttpWorker {
             response.header("Access-Control-Allow-Credentials", "true");
 
             response.type("application/json");
+        });
+
+        exception(InvalidParameterException.class, (exception, request, response) -> {
+            response.status(400);
+            log.trace(request.url() + " - 400: ", exception);
+
+            response.body(ApiMessage.of(exception.getMessage()).toString());
         });
 
         exception(IllegalArgumentException.class, (exception, request, response) -> {

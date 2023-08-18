@@ -3,8 +3,12 @@ package su.knst.fintrack.utils.params.validators;
 import java.util.function.Function;
 
 public class LongValidator extends AbstractValidator<Long> {
+    public LongValidator(Long raw, String name) {
+        super(raw, name);
+    }
+
     public LongValidator(Long raw) {
-        super(raw);
+        super(raw, null);
     }
 
     public LongValidator range(long from, long to) {

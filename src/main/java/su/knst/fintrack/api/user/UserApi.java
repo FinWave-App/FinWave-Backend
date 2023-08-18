@@ -9,6 +9,7 @@ import spark.Response;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.general.UserConfig;
 import su.knst.fintrack.http.ApiMessage;
+import su.knst.fintrack.jooq.tables.records.UsersSessionsRecord;
 import su.knst.fintrack.utils.params.ParamsValidator;
 
 import java.time.ZoneId;
@@ -67,5 +68,20 @@ public class UserApi {
         response.status(201);
 
         return ApiMessage.of("Successful registration");
+    }
+
+    public Object changePassword(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        String password = ParamsValidator.string(request, "password")
+                .length(config.minPasswordLength, config.maxPasswordLength)
+                .matches(config.registration.passwordRegexFilter)
+                .require();
+
+        database.changeUserPassword(sessionsRecord.getUserId(), password);
+
+        response.status(200);
+
+        return ApiMessage.of("Password changed");
     }
 }
