@@ -12,6 +12,7 @@ import su.knst.fintrack.api.auth.AuthenticationFailException;
 import su.knst.fintrack.api.config.ConfigApi;
 import su.knst.fintrack.api.currency.CurrencyApi;
 import su.knst.fintrack.api.note.NoteApi;
+import su.knst.fintrack.api.session.SessionApi;
 import su.knst.fintrack.api.transaction.TransactionApi;
 import su.knst.fintrack.api.transaction.tag.TransactionTagApi;
 import su.knst.fintrack.api.user.UserApi;
@@ -36,11 +37,13 @@ public class HttpWorker {
     protected TransactionApi transactionApi;
     protected TransactionTagApi transactionTagApi;
     protected AnalyticsApi analyticsApi;
+    protected SessionApi sessionApi;
 
     @Inject
     public HttpWorker(Configs configs,
                       AuthApi authApi,
                       UserApi userApi,
+                      SessionApi sessionApi,
                       ConfigApi configApi,
                       NoteApi noteApi,
                       AccountTagApi accountTagApi,
@@ -53,6 +56,7 @@ public class HttpWorker {
 
         this.authApi = authApi;
         this.userApi = userApi;
+        this.sessionApi = sessionApi;
         this.configApi = configApi;
         this.noteApi = noteApi;
         this.accountTagApi = accountTagApi;
@@ -69,6 +73,16 @@ public class HttpWorker {
     protected void patches() {
         path("/user", () -> {
             before("/*", authApi::auth);
+
+            get("/getUsername", userApi::getUsername);
+            post("/changePassword", userApi::changePassword);
+            post("/logout", userApi::logout);
+
+            path("/sessions", () -> {
+                get("/getSessions", sessionApi::getSessions);
+                post("/newSession", sessionApi::newSession);
+                post("/deleteSession", sessionApi::deleteSession);
+            });
 
             path("/notes", () -> {
                 get("/get", noteApi::getNote);

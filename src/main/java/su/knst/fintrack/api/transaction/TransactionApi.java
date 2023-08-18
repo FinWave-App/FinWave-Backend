@@ -163,11 +163,11 @@ public class TransactionApi {
     }
 
     static class GetTransactionsListResponse extends ApiResponse {
-        public final List<Entity> transactions;
+        public final List<Entry> transactions;
 
         public GetTransactionsListResponse(List<TransactionsRecord> transactions) {
             this.transactions = transactions.stream()
-                    .map(r -> new Entity(
+                    .map(r -> new Entry(
                             r.getId(),
                             r.getTagId(),
                             r.getAccountId(),
@@ -178,7 +178,7 @@ public class TransactionApi {
                     .toList();
         }
 
-        record Entity(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {}
+        record Entry(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {}
     }
 
     static class TransactionsCountResponse extends ApiResponse {

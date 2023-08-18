@@ -64,7 +64,7 @@ public class CurrencyDatabase {
     public List<CurrenciesRecord> getUserCurrenciesWithRoot(int userId) {
         return context
                 .selectFrom(CURRENCIES)
-                .where(CURRENCIES.OWNER_ID.eq(userId).and(CURRENCIES.OWNER_ID.eq(1)))
+                .where(CURRENCIES.OWNER_ID.eq(userId).or(CURRENCIES.OWNER_ID.eq(1)))
                 .orderBy(CURRENCIES.ID)
                 .fetch();
     }

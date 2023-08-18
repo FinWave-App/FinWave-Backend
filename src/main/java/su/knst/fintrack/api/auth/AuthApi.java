@@ -5,6 +5,7 @@ import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import su.knst.fintrack.api.ApiResponse;
+import su.knst.fintrack.api.session.SessionDatabase;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.general.UserConfig;
 import su.knst.fintrack.jooq.tables.records.UsersRecord;
@@ -16,28 +17,19 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static spark.Spark.halt;
+import static su.knst.fintrack.utils.SessionGenerator.generateSessionToken;
 
 @Singleton
 public class AuthApi {
-    protected static SecureRandom random = new SecureRandom();
-    @SuppressWarnings("SpellCheckingInspection")
-    protected static char[] sessionSymbols = "1234567890ABCDEFGHIKLMNOPQRSTVXYZabcdefghiklmnopqrstvxyz".toCharArray();
-
     protected UserConfig config;
     protected AuthDatabase database;
+    protected SessionDatabase sessionDatabase;
 
     @Inject
-    public AuthApi(AuthDatabase database, Configs configs) {
+    public AuthApi(AuthDatabase database, SessionDatabase sessionDatabase, Configs configs) {
         this.database = database;
+        this.sessionDatabase = sessionDatabase;
         this.config = configs.getState(new UserConfig());
-    }
-
-    protected static String generateSessionToken() {
-        return random
-                .ints(512, 0, sessionSymbols.length)
-                .mapToObj((i) -> sessionSymbols[i])
-                .collect(StringBuffer::new, StringBuffer::append, StringBuffer::append)
-                .toString();
     }
 
     public void auth(Request request, Response response) throws AuthenticationFailException {
@@ -60,13 +52,13 @@ public class AuthApi {
         LocalDateTime now = LocalDateTime.now();
 
         if (sessionsRecord.get().getExpiresAt().isBefore(now)) {
-            database.deleteSession(sessionsRecord.get().getToken());
+            sessionDatabase.deleteSession(sessionsRecord.get().getToken());
 
             throw new AuthenticationFailException();
         }
 
         if (now.plusDays(config.userSessionsLifetimeDays - 1).isAfter(sessionsRecord.get().getExpiresAt()))
-            database.updateSessionLifetime(sessionsRecord.get().getToken(), config.userSessionsLifetimeDays);
+            sessionDatabase.updateSessionLifetime(sessionsRecord.get().getToken(), config.userSessionsLifetimeDays);
 
         request.attribute("session", sessionsRecord.get());
     }
@@ -94,7 +86,7 @@ public class AuthApi {
 
         String token = generateSessionToken();
 
-        database.newSession(sessionsRecord.get().getId(), token, config.userSessionsLifetimeDays, description.orElse(null));
+        sessionDatabase.newSession(sessionsRecord.get().getId(), token, config.userSessionsLifetimeDays, description.orElse(null));
 
         return new LoginResponse(token, config.userSessionsLifetimeDays);
     }

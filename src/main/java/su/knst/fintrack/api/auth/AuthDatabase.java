@@ -25,32 +25,6 @@ public class AuthDatabase {
         this.context = database.context();
     }
 
-    public void newSession(int userId, String token, int lifetimeDays, String description) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expires = now.plusDays(lifetimeDays);
-
-        context.insertInto(USERS_SESSIONS)
-                .set(USERS_SESSIONS.USER_ID, userId)
-                .set(USERS_SESSIONS.TOKEN, token)
-                .set(USERS_SESSIONS.CREATED_AT, now)
-                .set(USERS_SESSIONS.EXPIRES_AT, expires)
-                .set(USERS_SESSIONS.DESCRIPTION, description)
-                .execute();
-    }
-
-    public void updateSessionLifetime(String token, int lifetimeDays) {
-        context.update(USERS_SESSIONS)
-                .set(USERS_SESSIONS.EXPIRES_AT, LocalDateTime.now().plusDays(lifetimeDays))
-                .where(USERS_SESSIONS.TOKEN.eq(token))
-                .execute();
-    }
-
-    public void deleteSession(String token) {
-        context.deleteFrom(USERS_SESSIONS)
-                .where(USERS_SESSIONS.TOKEN.eq(token))
-                .execute();
-    }
-
     public Optional<UsersRecord> authUser(String login, String password) {
         Optional<UsersRecord> record = context.selectFrom(USERS)
                 .where(USERS.USERNAME.eq(login))

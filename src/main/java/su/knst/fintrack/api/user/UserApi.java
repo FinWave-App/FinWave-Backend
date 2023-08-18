@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
+import su.knst.fintrack.api.ApiResponse;
+import su.knst.fintrack.api.session.SessionDatabase;
 import su.knst.fintrack.config.Configs;
 import su.knst.fintrack.config.general.UserConfig;
 import su.knst.fintrack.http.ApiMessage;
@@ -23,12 +25,15 @@ public class UserApi {
 
     protected UserDatabase database;
     protected UserSettingsDatabase userSettingsDatabase;
+    protected SessionDatabase sessionDatabase;
+
     protected UserConfig config;
 
     @Inject
-    public UserApi(UserDatabase database, UserSettingsDatabase userSettingsDatabase, Configs configs) {
+    public UserApi(UserDatabase database, UserSettingsDatabase userSettingsDatabase, SessionDatabase sessionDatabase, Configs configs) {
         this.database = database;
         this.userSettingsDatabase = userSettingsDatabase;
+        this.sessionDatabase = sessionDatabase;
 
         this.config = configs.getState(new UserConfig());
     }
@@ -79,9 +84,38 @@ public class UserApi {
                 .require();
 
         database.changeUserPassword(sessionsRecord.getUserId(), password);
+        sessionDatabase.deleteAllUserSessions(sessionsRecord.getUserId());
 
         response.status(200);
 
         return ApiMessage.of("Password changed");
+    }
+
+    public Object getUsername(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        String username = database.getUsername(sessionsRecord.getUserId());
+
+        response.status(200);
+
+        return new GetUsernameResponse(username);
+    }
+
+    public Object logout(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        sessionDatabase.deleteSession(sessionsRecord.getId());
+
+        response.status(200);
+
+        return ApiMessage.of("Logged out");
+    }
+
+    static class GetUsernameResponse extends ApiResponse {
+        public final String username;
+
+        public GetUsernameResponse(String username) {
+            this.username = username;
+        }
     }
 }

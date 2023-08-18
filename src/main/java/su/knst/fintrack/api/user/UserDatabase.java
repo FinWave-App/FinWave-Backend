@@ -61,4 +61,13 @@ public class UserDatabase {
                 .where(USERS.ID.eq(userId))
                 .execute();
     }
+
+    public String getUsername(int userId) {
+        return context.select(USERS.USERNAME)
+                .from(USERS)
+                .where(USERS.ID.eq(userId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElse(null);
+    }
 }
