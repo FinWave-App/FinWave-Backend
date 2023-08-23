@@ -79,9 +79,9 @@ public class HttpWorker {
             post("/logout", userApi::logout);
 
             path("/sessions", () -> {
-                get("/getSessions", sessionApi::getSessions);
-                post("/newSession", sessionApi::newSession);
-                post("/deleteSession", sessionApi::deleteSession);
+                get("/getList", sessionApi::getSessions);
+                post("/new", sessionApi::newSession);
+                post("/delete", sessionApi::deleteSession);
             });
 
             path("/notes", () -> {
