@@ -8,7 +8,7 @@ create table if not exists users
 );
 
 alter table users
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists users_sessions
@@ -22,7 +22,7 @@ create table if not exists users_sessions
 );
 
 alter table users_sessions
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists users_settings
@@ -34,7 +34,7 @@ create table if not exists users_settings
 );
 
 alter table users_settings
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists notes
@@ -47,7 +47,7 @@ create table if not exists notes
 );
 
 alter table notes
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists accounts_tags
@@ -59,7 +59,7 @@ create table if not exists accounts_tags
 );
 
 alter table accounts_tags
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists transactions_tags
@@ -73,7 +73,7 @@ create table if not exists transactions_tags
 );
 
 alter table transactions_tags
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists currencies
@@ -87,7 +87,7 @@ create table if not exists currencies
 );
 
 alter table currencies
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists accounts
@@ -103,7 +103,7 @@ create table if not exists accounts
  );
 
 alter table accounts
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists transactions
@@ -119,7 +119,7 @@ create table if not exists transactions
 );
 
 alter table transactions
-    owner to fintrack;
+    owner to finwave;
 
 
 create table if not exists recurring_transactions
@@ -139,4 +139,4 @@ create table if not exists recurring_transactions
 );
 
 alter table transactions
-    owner to fintrack;
+    owner to finwave;

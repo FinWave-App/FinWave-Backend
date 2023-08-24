@@ -5,11 +5,11 @@ plugins {
     id 'org.flywaydb.flyway' version '9.16.3'
 }
 
-group 'su.knst.fintrack'
+group 'su.knst.finwave'
 
 version = '1.0.0'
 mainClassName = group + ".Main"
-archivesBaseName = 'FinTrack'
+archivesBaseName = 'FinWave'
 
 repositories {
     mavenCentral()
@@ -54,8 +54,8 @@ dependencies {
 }
 
 flyway {
-    url = 'jdbc:postgresql://postgres:5432/fintrack'
-    user = 'fintrack'
+    url = 'jdbc:postgresql://postgres:5432/finwave'
+    user = 'finwave'
     password = 'change_me'
     schemas = ['public']
     driver = 'org.postgresql.Driver'
@@ -71,8 +71,8 @@ jooq {
             generationTool {
                 jdbc {
                     driver = 'org.postgresql.Driver'
-                    url = 'jdbc:postgresql://postgres:5432/fintrack'
-                    user = 'fintrack'
+                    url = 'jdbc:postgresql://postgres:5432/finwave'
+                    user = 'finwave'
                     password = 'change_me'
                     properties {
                         property {
@@ -116,7 +116,7 @@ jooq {
                         fluentSetters = true
                     }
                     target {
-                        packageName = 'su.knst.fintrack.jooq'
+                        packageName = 'su.knst.finwave.jooq'
                         directory = 'build/generated-src/jooq/main'
                     }
                     strategy.name = 'org.jooq.codegen.DefaultGeneratorStrategy'
