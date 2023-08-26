@@ -11,6 +11,9 @@ version = '1.0.0'
 mainClassName = group + ".Main"
 archivesBaseName = 'FinWave'
 
+sourceCompatibility = 17
+targetCompatibility = 17
+
 repositories {
     mavenCentral()
     maven {
