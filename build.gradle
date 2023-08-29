@@ -57,7 +57,7 @@ dependencies {
 }
 
 flyway {
-    url = 'jdbc:postgresql://postgres:5432/finwave'
+    url = 'jdbc:postgresql://localhost:5432/finwave'
     user = 'finwave'
     password = 'change_me'
     schemas = ['public']
@@ -74,7 +74,7 @@ jooq {
             generationTool {
                 jdbc {
                     driver = 'org.postgresql.Driver'
-                    url = 'jdbc:postgresql://postgres:5432/finwave'
+                    url = 'jdbc:postgresql://localhost:5432/finwave'
                     user = 'finwave'
                     password = 'change_me'
                     properties {
