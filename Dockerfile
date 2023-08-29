@@ -5,6 +5,6 @@ EXPOSE 8080
 
 WORKDIR /finwave
 
-COPY ./build/libs/FinTrack.jar ./
+COPY build/libs/FinTrack.jar ./
 
 ENTRYPOINT ["java", "-jar", "FinTrack.jar"]
