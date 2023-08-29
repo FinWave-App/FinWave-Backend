@@ -5,6 +5,6 @@ EXPOSE 8080
 
 WORKDIR /finwave
 
-COPY FinTrack.jar ./
+COPY ./FinWave.jar ./
 
-ENTRYPOINT ["java", "-jar", "FinTrack.jar"]
+ENTRYPOINT ["java", "-jar", "FinWave.jar"]
