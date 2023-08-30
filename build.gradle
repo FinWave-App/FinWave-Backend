@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'application'
     id 'nu.studer.jooq' version '8.2'
-    id 'org.flywaydb.flyway' version '9.16.3'
+    id 'org.flywaydb.flyway' version '9.22.0'
 }
 
 group 'su.knst.finwave'
@@ -63,7 +63,7 @@ flyway {
     schemas = ['public']
     driver = 'org.postgresql.Driver'
     baselineOnMigrate = true
-    locations = ['classpath:db/migration', 'filesystem:src/main/resources/db/migration']
+    locations = ['classpath:db/migration']
 }
 
 jooq {
