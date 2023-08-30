@@ -34,6 +34,7 @@ public class Database {
         flyway = Flyway.configure()
                 .dataSource(config.url, config.user, config.password)
                 .baselineVersion("1.0.0")
+                .validateMigrationNaming(false) // TODO: Flyaway does not accept any migration name at runtime
                 .loggers("slf4j")
                 .load();
 
