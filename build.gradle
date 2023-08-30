@@ -63,7 +63,7 @@ flyway {
     schemas = ['public']
     driver = 'org.postgresql.Driver'
     baselineOnMigrate = true
-    locations = ['classpath:/migrations/']
+    locations = ['classpath:/migrations/', 'filesystem:src/main/resources/migrations/']
 }
 
 jooq {
