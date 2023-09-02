@@ -31,7 +31,7 @@ configurations.implementation.setCanBeResolved(true)
 dependencies {
     implementation 'org.reflections:reflections:0.10.2'
 
-    implementation 'org.flywaydb:flyway-core:9.16.3'
+    implementation 'org.flywaydb:flyway-core:9.22.0'
 
     implementation 'org.jooq:jooq:3.18.3'
     implementation 'org.jooq:jooq-codegen-maven:3.18.3'
