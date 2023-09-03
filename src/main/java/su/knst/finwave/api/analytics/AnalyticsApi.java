@@ -10,6 +10,7 @@ import su.knst.finwave.api.transaction.filter.TransactionsFilter;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.AnalyticsConfig;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
+import su.knst.finwave.utils.params.InvalidParameterException;
 
 import java.time.OffsetDateTime;
 
@@ -38,7 +39,7 @@ public class AnalyticsApi {
             filter.setToTime(OffsetDateTime.now());
 
         if (!filter.validateTime(config.maxTimeRangeDaysForMonths))
-            throw new IllegalArgumentException();
+            throw new InvalidParameterException("Invalid date");
 
         AnalyticsByMonths analytics = database.getAnalyticsByMonths(sessionsRecord.getUserId(), filter);
 
