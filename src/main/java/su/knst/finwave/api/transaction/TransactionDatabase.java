@@ -3,8 +3,13 @@ package su.knst.finwave.api.transaction;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.*;
+import org.jooq.Record;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
+import su.knst.finwave.api.transaction.metadata.MetadataDatabase;
+import su.knst.finwave.api.transaction.metadata.MetadataType;
 import su.knst.finwave.database.Database;
+import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
+import su.knst.finwave.jooq.tables.records.TransactionsMetadataRecord;
 import su.knst.finwave.jooq.tables.records.TransactionsRecord;
 
 import java.math.BigDecimal;
@@ -19,9 +24,26 @@ public class TransactionDatabase {
 
     protected DSLContext context;
 
+    protected MetadataDatabase metadataDatabase;
+
     @Inject
-    public TransactionDatabase(Database database) {
+    public TransactionDatabase(Database database, MetadataDatabase metadataDatabase) {
         this.context = database.context();
+        this.metadataDatabase = metadataDatabase;
+    }
+
+    public long applyInternalTransfer(int userId, long tagId, long fromAccountId, long toAccountId, OffsetDateTime created, BigDecimal fromDelta, BigDecimal toDelta, String description) {
+        long fromTransaction = applyTransaction(userId, tagId, fromAccountId, created, fromDelta, description);
+        long toTransaction = applyTransaction(userId, tagId, toAccountId, created, toDelta, null);
+
+        long metadata = metadataDatabase.createInternalTransferMetadata(fromTransaction, toTransaction);
+
+        context.update(TRANSACTIONS)
+                .set(TRANSACTIONS.METADATA_ID, metadata)
+                .where(TRANSACTIONS.ID.eq(fromTransaction).or(TRANSACTIONS.ID.eq(toTransaction)))
+                .execute();
+
+        return fromTransaction;
     }
 
     public long applyTransaction(int userId, long tagId, long accountId, OffsetDateTime created, BigDecimal delta, String description) {
@@ -57,6 +79,58 @@ public class TransactionDatabase {
         });
     }
 
+    private void cancelTransaction(DSLContext context, TransactionsRecord record) {
+        context.deleteFrom(TRANSACTIONS)
+                .where(TRANSACTIONS.ID.eq(record.getId()))
+                .execute();
+
+        context.update(ACCOUNTS)
+                .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(record.getDelta()))
+                .where(ACCOUNTS.ID.eq(record.getAccountId()))
+                .execute();
+    }
+
+    private void cancelTransactionWithMeta(DSLContext context, TransactionsRecord record) {
+        TransactionsMetadataRecord metadataRecord = context
+                .selectFrom(TRANSACTIONS_METADATA)
+                .where(TRANSACTIONS_METADATA.ID.eq(record.getMetadataId()))
+                .fetchOne();
+
+        if (metadataRecord == null)
+            throw new RuntimeException("Metadata not exists");
+
+        MetadataType type = MetadataType.get(metadataRecord.getType());
+
+        if (type == MetadataType.INTERNAL_TRANSFER) {
+            InternalTransfersRecord internalTransfersRecord = context.selectFrom(INTERNAL_TRANSFERS)
+                    .where(INTERNAL_TRANSFERS.ID.eq(metadataRecord.getArg()))
+                    .fetchOptional()
+                    .orElseThrow();
+
+            long toFetch = record.getId().equals(internalTransfersRecord.getFromTransactionId()) ?
+                    internalTransfersRecord.getToTransactionId() :
+                    internalTransfersRecord.getFromTransactionId();
+
+            TransactionsRecord record2 = context.selectFrom(TRANSACTIONS)
+                    .where(TRANSACTIONS.ID.eq(toFetch))
+                    .fetchOne();
+
+            if (record2 == null)
+                throw new RuntimeException("Second transaction not exists");
+
+            context.deleteFrom(INTERNAL_TRANSFERS)
+                    .where(INTERNAL_TRANSFERS.ID.eq(internalTransfersRecord.getId()))
+                    .execute();
+
+            cancelTransaction(context, record);
+            cancelTransaction(context, record2);
+
+            context.deleteFrom(TRANSACTIONS_METADATA)
+                    .where(TRANSACTIONS_METADATA.ID.eq(metadataRecord.getId()))
+                    .execute();
+        }
+    }
+
     public void cancelTransaction(long transactionId) {
         context.transaction((configuration) -> {
             DSLContext transaction = configuration.dsl();
@@ -68,14 +142,11 @@ public class TransactionDatabase {
             if (record.isEmpty())
                 throw new RuntimeException("Transaction not exists");
 
-            transaction.deleteFrom(TRANSACTIONS)
-                    .where(TRANSACTIONS.ID.eq(transactionId))
-                    .execute();
-
-            transaction.update(ACCOUNTS)
-                    .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(record.get().getDelta()))
-                    .where(ACCOUNTS.ID.eq(record.get().getAccountId()))
-                    .execute();
+            if (record.get().getMetadataId() == null) {
+                cancelTransaction(transaction, record.get());
+            }else {
+                cancelTransactionWithMeta(transaction, record.get());
+            }
         });
     }
 
@@ -90,10 +161,10 @@ public class TransactionDatabase {
                 .orElse(0);
     }
 
-    public List<TransactionsRecord> getTransactions(int userId, int offset, int count, TransactionsFilter filter) {
+    public List<Record> getTransactions(int userId, int offset, int count, TransactionsFilter filter) {
         Condition condition = generateFilterCondition(userId, filter);
 
-        return context.selectFrom(TRANSACTIONS)
+        return context.selectFrom(TRANSACTIONS.leftJoin(TRANSACTIONS_METADATA).on(TRANSACTIONS.METADATA_ID.eq(TRANSACTIONS_METADATA.ID)))
                 .where(condition)
                 .orderBy(TRANSACTIONS.CREATED_AT.desc(), TRANSACTIONS.ID.desc())
                 .limit(offset, count)

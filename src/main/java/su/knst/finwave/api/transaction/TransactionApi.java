@@ -2,6 +2,7 @@ package su.knst.finwave.api.transaction;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.jooq.Record;
 import spark.Request;
 import spark.Response;
 import su.knst.finwave.api.ApiResponse;
@@ -20,6 +21,9 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static su.knst.finwave.jooq.Tables.TRANSACTIONS;
+import static su.knst.finwave.jooq.Tables.TRANSACTIONS_METADATA;
+
 @Singleton
 public class TransactionApi {
     protected TransactionDatabase database;
@@ -33,6 +37,57 @@ public class TransactionApi {
         this.database = database;
         this.tagDatabase = tagDatabase;
         this.accountDatabase = accountDatabase;
+    }
+
+    public Object newInternalTransfer(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        long tagId = ParamsValidator
+                .longV(request, "tagId")
+                .matches((id) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), id))
+                .require();
+
+        long fromAccountId = ParamsValidator
+                .longV(request, "fromAccountId")
+                .matches((id) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), id))
+                .require();
+
+        long toAccountId = ParamsValidator
+                .longV(request, "toAccountId")
+                .matches((id) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), id))
+                .require();
+
+        OffsetDateTime time = ParamsValidator
+                .string(request, "createdAt")
+                .map(OffsetDateTime::parse);
+
+        BigDecimal fromDelta = ParamsValidator
+                .string(request, "fromDelta")
+                .map(BigDecimal::new);
+
+        BigDecimal toDelta = ParamsValidator
+                .string(request, "toDelta")
+                .map(BigDecimal::new);
+
+        Optional<String> description = ParamsValidator
+                .string(request, "description")
+                .length(1, config.maxDescriptionLength)
+                .optional();
+
+        long transactionId = database.applyInternalTransfer(
+                sessionsRecord.getUserId(),
+                tagId,
+                fromAccountId,
+                toAccountId,
+                time,
+                fromDelta,
+                toDelta,
+                description.orElse(null)
+        );
+
+        response.status(201);
+
+        return new NewTransactionResponse(transactionId);
     }
 
     public Object newTransaction(Request request, Response response) {
@@ -155,7 +210,7 @@ public class TransactionApi {
 
         TransactionsFilter filter = new TransactionsFilter(request);
 
-        List<TransactionsRecord> records = database.getTransactions(sessionsRecord.getUserId(), offset, count, filter);
+        List<Record> records = database.getTransactions(sessionsRecord.getUserId(), offset, count, filter);
 
         response.status(200);
 
@@ -165,20 +220,23 @@ public class TransactionApi {
     static class GetTransactionsListResponse extends ApiResponse {
         public final List<Entry> transactions;
 
-        public GetTransactionsListResponse(List<TransactionsRecord> transactions) {
+        public GetTransactionsListResponse(List<Record> transactions) {
             this.transactions = transactions.stream()
                     .map(r -> new Entry(
-                            r.getId(),
-                            r.getTagId(),
-                            r.getAccountId(),
-                            r.getCurrencyId(),
-                            r.getCreatedAt(),
-                            r.getDelta(),
-                            r.getDescription()))
+                            r.get(TRANSACTIONS.ID),
+                            r.get(TRANSACTIONS.TAG_ID),
+                            r.get(TRANSACTIONS.ACCOUNT_ID),
+                            r.get(TRANSACTIONS.CURRENCY_ID),
+                            r.get(TRANSACTIONS.CREATED_AT),
+                            r.get(TRANSACTIONS.DELTA),
+                            r.get(TRANSACTIONS.DESCRIPTION),
+                            r.get(TRANSACTIONS_METADATA.ID),
+                            r.get(TRANSACTIONS_METADATA.TYPE),
+                            r.get(TRANSACTIONS_METADATA.ARG)))
                     .toList();
         }
 
-        record Entry(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {}
+        record Entry(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description, Long metadataId, Short metadataType, Long metadataArg) {}
     }
 
     static class TransactionsCountResponse extends ApiResponse {
