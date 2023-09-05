@@ -68,19 +68,8 @@ public class TransactionsListGenerator {
         InternalTransfersRecord metaRecord = metadataDatabase.getInternalTransferMeta(metadataId).orElseThrow();
 
         long toFetch = record.get(TRANSACTIONS.DELTA).signum() > 0 ? metaRecord.getFromTransactionId() : metaRecord.getToTransactionId();
-        Record secondTransaction = database.getTransaction(toFetch).orElseThrow();
+        TransactionEntry<?> secondTransaction = database.getTransaction(toFetch).map(TransactionEntry::new).orElseThrow();
 
-        Record mainRecord;
-        TransactionEntry<?> linkedTransaction;
-
-        if (record.get(TRANSACTIONS.DELTA).signum() < 0) {
-            mainRecord = record;
-            linkedTransaction = new TransactionEntry<>(secondTransaction);
-        }else {
-            mainRecord = secondTransaction;
-            linkedTransaction = new TransactionEntry<>(record);
-        }
-
-        return new TransactionEntry<>(mainRecord, new InternalTransferMetadata(metadataId, linkedTransaction));
+        return new TransactionEntry<>(record, new InternalTransferMetadata(metadataId, secondTransaction));
     }
 }
