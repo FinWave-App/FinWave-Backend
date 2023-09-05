@@ -5,6 +5,9 @@ import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import su.knst.finwave.database.Database;
+import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
+
+import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.*;
 
@@ -43,5 +46,11 @@ public class MetadataDatabase {
                 .orElseThrow();
 
         return createMetadata(MetadataType.INTERNAL_TRANSFER, internalId);
+    }
+
+    public Optional<InternalTransfersRecord> getInternalTransferMeta(long id) {
+        return context.selectFrom(INTERNAL_TRANSFERS)
+                .where(INTERNAL_TRANSFERS.ID.eq(id))
+                .fetchOptional();
     }
 }

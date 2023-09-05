@@ -161,10 +161,20 @@ public class TransactionDatabase {
                 .orElse(0);
     }
 
+    public Optional<Record> getTransaction(long id) {
+        return context.selectFrom(TRANSACTIONS
+                        .leftJoin(TRANSACTIONS_METADATA)
+                        .on(TRANSACTIONS.METADATA_ID.eq(TRANSACTIONS_METADATA.ID)))
+                .where(TRANSACTIONS.ID.eq(id))
+                .fetchOptional();
+    }
+
     public List<Record> getTransactions(int userId, int offset, int count, TransactionsFilter filter) {
         Condition condition = generateFilterCondition(userId, filter);
 
-        return context.selectFrom(TRANSACTIONS.leftJoin(TRANSACTIONS_METADATA).on(TRANSACTIONS.METADATA_ID.eq(TRANSACTIONS_METADATA.ID)))
+        return context.selectFrom(TRANSACTIONS
+                        .leftJoin(TRANSACTIONS_METADATA)
+                        .on(TRANSACTIONS.METADATA_ID.eq(TRANSACTIONS_METADATA.ID)))
                 .where(condition)
                 .orderBy(TRANSACTIONS.CREATED_AT.desc(), TRANSACTIONS.ID.desc())
                 .limit(offset, count)

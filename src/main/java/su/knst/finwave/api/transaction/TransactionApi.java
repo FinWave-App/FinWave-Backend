@@ -8,12 +8,15 @@ import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.account.AccountDatabase;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
+import su.knst.finwave.api.transaction.generator.TransactionEntry;
+import su.knst.finwave.api.transaction.generator.TransactionsListGenerator;
 import su.knst.finwave.api.transaction.tag.TransactionTagDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.TransactionConfig;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.TransactionsRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
+import su.knst.finwave.utils.params.InvalidParameterException;
 import su.knst.finwave.utils.params.ParamsValidator;
 
 import java.math.BigDecimal;
@@ -29,14 +32,16 @@ public class TransactionApi {
     protected TransactionDatabase database;
     protected TransactionTagDatabase tagDatabase;
     protected AccountDatabase accountDatabase;
+    protected TransactionsListGenerator generator;
     protected TransactionConfig config;
 
     @Inject
-    public TransactionApi(TransactionDatabase database, TransactionTagDatabase tagDatabase, AccountDatabase accountDatabase, Configs configs) {
+    public TransactionApi(TransactionDatabase database, TransactionTagDatabase tagDatabase, AccountDatabase accountDatabase, TransactionsListGenerator generator, Configs configs) {
         this.config = configs.getState(new TransactionConfig());
         this.database = database;
         this.tagDatabase = tagDatabase;
         this.accountDatabase = accountDatabase;
+        this.generator = generator;
     }
 
     public Object newInternalTransfer(Request request, Response response) {
@@ -55,6 +60,7 @@ public class TransactionApi {
         long toAccountId = ParamsValidator
                 .longV(request, "toAccountId")
                 .matches((id) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), id))
+                .matches((id) -> id != fromAccountId)
                 .require();
 
         OffsetDateTime time = ParamsValidator
@@ -65,9 +71,15 @@ public class TransactionApi {
                 .string(request, "fromDelta")
                 .map(BigDecimal::new);
 
+        if (fromDelta.signum() >= 0)
+            throw new InvalidParameterException("fromDelta cannot be greater than or equal to zero");
+
         BigDecimal toDelta = ParamsValidator
                 .string(request, "toDelta")
                 .map(BigDecimal::new);
+
+        if (toDelta.signum() <= 0)
+            throw new InvalidParameterException("toDelta cannot be less than or equal to zero");
 
         Optional<String> description = ParamsValidator
                 .string(request, "description")
@@ -211,32 +223,19 @@ public class TransactionApi {
         TransactionsFilter filter = new TransactionsFilter(request);
 
         List<Record> records = database.getTransactions(sessionsRecord.getUserId(), offset, count, filter);
+        List<TransactionEntry<?>> transactions = generator.prepareTransactions(records);
 
         response.status(200);
 
-        return new GetTransactionsListResponse(records);
+        return new GetTransactionsListResponse(transactions);
     }
 
     static class GetTransactionsListResponse extends ApiResponse {
-        public final List<Entry> transactions;
+        public final List<TransactionEntry<?>> transactions;
 
-        public GetTransactionsListResponse(List<Record> transactions) {
-            this.transactions = transactions.stream()
-                    .map(r -> new Entry(
-                            r.get(TRANSACTIONS.ID),
-                            r.get(TRANSACTIONS.TAG_ID),
-                            r.get(TRANSACTIONS.ACCOUNT_ID),
-                            r.get(TRANSACTIONS.CURRENCY_ID),
-                            r.get(TRANSACTIONS.CREATED_AT),
-                            r.get(TRANSACTIONS.DELTA),
-                            r.get(TRANSACTIONS.DESCRIPTION),
-                            r.get(TRANSACTIONS_METADATA.ID),
-                            r.get(TRANSACTIONS_METADATA.TYPE),
-                            r.get(TRANSACTIONS_METADATA.ARG)))
-                    .toList();
+        public GetTransactionsListResponse(List<TransactionEntry<?>> transactions) {
+            this.transactions = transactions;
         }
-
-        record Entry(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description, Long metadataId, Short metadataType, Long metadataArg) {}
     }
 
     static class TransactionsCountResponse extends ApiResponse {

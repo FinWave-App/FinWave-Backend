@@ -1,6 +1,7 @@
 package su.knst.finwave.api.transaction.metadata;
 
 public enum MetadataType {
+    WITHOUT_METADATA(0),
     INTERNAL_TRANSFER(1);
 
     public final short type;
@@ -10,6 +11,6 @@ public enum MetadataType {
     }
 
     public static MetadataType get(short type) {
-        return MetadataType.values()[type - 1];
+        return MetadataType.values()[type];
     }
 }
