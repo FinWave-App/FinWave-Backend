@@ -34,7 +34,7 @@ public class TransactionDatabase {
 
     public long applyInternalTransfer(int userId, long tagId, long fromAccountId, long toAccountId, OffsetDateTime created, BigDecimal fromDelta, BigDecimal toDelta, String description) {
         long fromTransaction = applyTransaction(userId, tagId, fromAccountId, created, fromDelta, description);
-        long toTransaction = applyTransaction(userId, tagId, toAccountId, created, toDelta, null);
+        long toTransaction = applyTransaction(userId, tagId, toAccountId, created, toDelta, description);
 
         long metadata = metadataDatabase.createInternalTransferMetadata(fromTransaction, toTransaction);
 
