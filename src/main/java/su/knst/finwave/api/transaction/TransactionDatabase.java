@@ -11,6 +11,7 @@ import su.knst.finwave.database.Database;
 import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
 import su.knst.finwave.jooq.tables.records.TransactionsMetadataRecord;
 import su.knst.finwave.jooq.tables.records.TransactionsRecord;
+import su.knst.finwave.utils.params.InvalidParameterException;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -221,6 +222,70 @@ public class TransactionDatabase {
         return condition;
     }
 
+    private void editTransaction(DSLContext context, TransactionsRecord record, long tagId, long accountId, OffsetDateTime created, BigDecimal delta, String description) {
+        context.update(ACCOUNTS)
+                .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(record.getDelta()))
+                .where(ACCOUNTS.ID.eq(record.getAccountId()))
+                .execute();
+
+        Optional<Long> currencyId = context
+                .update(ACCOUNTS)
+                .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(delta))
+                .where(ACCOUNTS.ID.eq(accountId))
+                .returningResult(ACCOUNTS.CURRENCY_ID)
+                .fetchOptional()
+                .map(Record1::component1);
+
+        if (currencyId.isEmpty())
+            throw new RuntimeException("Failed to get currency id and modify account");
+
+        context.update(TRANSACTIONS)
+                .set(TRANSACTIONS.TAG_ID, tagId)
+                .set(TRANSACTIONS.ACCOUNT_ID, accountId)
+                .set(TRANSACTIONS.CURRENCY_ID, currencyId.get())
+                .set(TRANSACTIONS.CREATED_AT, created)
+                .set(TRANSACTIONS.DELTA, delta)
+                .set(TRANSACTIONS.DESCRIPTION, description)
+                .where(TRANSACTIONS.ID.eq(record.getId()))
+                .execute();
+    }
+
+    private void editTransactionWithMeta(DSLContext context, TransactionsRecord record, long tagId, long accountId, OffsetDateTime created, BigDecimal delta, String description) {
+        TransactionsMetadataRecord metadataRecord = context
+                .selectFrom(TRANSACTIONS_METADATA)
+                .where(TRANSACTIONS_METADATA.ID.eq(record.getMetadataId()))
+                .fetchOne();
+
+        if (metadataRecord == null)
+            throw new RuntimeException("Metadata not exists");
+
+        MetadataType type = MetadataType.get(metadataRecord.getType());
+
+        if (type == MetadataType.INTERNAL_TRANSFER) {
+            InternalTransfersRecord internalTransfersRecord = context.selectFrom(INTERNAL_TRANSFERS)
+                    .where(INTERNAL_TRANSFERS.ID.eq(metadataRecord.getArg()))
+                    .fetchOptional()
+                    .orElseThrow();
+
+            long toFetch = record.get(TRANSACTIONS.DELTA).signum() > 0 ? internalTransfersRecord.getFromTransactionId() : internalTransfersRecord.getToTransactionId();
+
+            Optional<TransactionsRecord> secondTransaction = context.selectFrom(TRANSACTIONS)
+                    .where(TRANSACTIONS.ID.eq(toFetch))
+                    .fetchOptional();
+
+            if (secondTransaction.isEmpty())
+                throw new RuntimeException("Second transaction not exists");
+
+            if (secondTransaction.get().getAccountId().equals(accountId)) // TODO: database class should not check parameters
+                throw new InvalidParameterException("accountId");
+
+            if (delta.signum() == 0 || secondTransaction.get().getDelta().signum() == delta.signum())
+                throw new InvalidParameterException("delta");
+
+            editTransaction(context, record, tagId, accountId, created, delta, description);
+        }
+    }
+
     public void editTransaction(long transactionId, long tagId, long accountId, OffsetDateTime created, BigDecimal delta, String description) {
         context.transaction((configuration) -> {
             DSLContext transaction = configuration.dsl();
@@ -232,31 +297,11 @@ public class TransactionDatabase {
             if (record.isEmpty())
                 throw new RuntimeException("Transaction not exists");
 
-            transaction.update(ACCOUNTS)
-                    .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(record.get().getDelta()))
-                    .where(ACCOUNTS.ID.eq(record.get().getAccountId()))
-                    .execute();
-
-            Optional<Long> currencyId = transaction
-                    .update(ACCOUNTS)
-                    .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(delta))
-                    .where(ACCOUNTS.ID.eq(accountId))
-                    .returningResult(ACCOUNTS.CURRENCY_ID)
-                    .fetchOptional()
-                    .map(Record1::component1);
-
-            if (currencyId.isEmpty())
-                throw new RuntimeException("Failed to get currency id and modify account");
-
-            transaction.update(TRANSACTIONS)
-                    .set(TRANSACTIONS.TAG_ID, tagId)
-                    .set(TRANSACTIONS.ACCOUNT_ID, accountId)
-                    .set(TRANSACTIONS.CURRENCY_ID, currencyId.get())
-                    .set(TRANSACTIONS.CREATED_AT, created)
-                    .set(TRANSACTIONS.DELTA, delta)
-                    .set(TRANSACTIONS.DESCRIPTION, description)
-                    .where(TRANSACTIONS.ID.eq(transactionId))
-                    .execute();
+            if (record.get().getMetadataId() == null) {
+                editTransaction(transaction, record.get(), tagId, accountId, created, delta, description);
+            }else {
+                editTransactionWithMeta(transaction, record.get(), tagId, accountId, created, delta, description);
+            }
         });
     }
 
