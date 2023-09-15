@@ -2,19 +2,20 @@ package su.knst.finwave.api.transaction;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.jooq.Record;
 import spark.Request;
 import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.account.AccountDatabase;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
-import su.knst.finwave.api.transaction.generator.TransactionEntry;
-import su.knst.finwave.api.transaction.generator.TransactionsListGenerator;
+import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
+import su.knst.finwave.api.transaction.manager.TransactionsManager;
+import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
+import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
+import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
 import su.knst.finwave.api.transaction.tag.TransactionTagDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.TransactionConfig;
 import su.knst.finwave.http.ApiMessage;
-import su.knst.finwave.jooq.tables.records.TransactionsRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.InvalidParameterException;
 import su.knst.finwave.utils.params.ParamsValidator;
@@ -24,24 +25,19 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static su.knst.finwave.jooq.Tables.TRANSACTIONS;
-import static su.knst.finwave.jooq.Tables.TRANSACTIONS_METADATA;
-
 @Singleton
 public class TransactionApi {
-    protected TransactionDatabase database;
+    protected TransactionsManager manager;
     protected TransactionTagDatabase tagDatabase;
     protected AccountDatabase accountDatabase;
-    protected TransactionsListGenerator generator;
     protected TransactionConfig config;
 
     @Inject
-    public TransactionApi(TransactionDatabase database, TransactionTagDatabase tagDatabase, AccountDatabase accountDatabase, TransactionsListGenerator generator, Configs configs) {
+    public TransactionApi(TransactionsManager manager, TransactionTagDatabase tagDatabase, AccountDatabase accountDatabase, Configs configs) {
         this.config = configs.getState(new TransactionConfig());
-        this.database = database;
+        this.manager = manager;
         this.tagDatabase = tagDatabase;
         this.accountDatabase = accountDatabase;
-        this.generator = generator;
     }
 
     public Object newInternalTransfer(Request request, Response response) {
@@ -86,7 +82,7 @@ public class TransactionApi {
                 .length(1, config.maxDescriptionLength)
                 .optional();
 
-        long transactionId = database.applyInternalTransfer(
+        long transactionId = manager.applyInternalTransfer(new TransactionNewInternalRecord(
                 sessionsRecord.getUserId(),
                 tagId,
                 fromAccountId,
@@ -94,7 +90,7 @@ public class TransactionApi {
                 time,
                 fromDelta,
                 toDelta,
-                description.orElse(null)
+                description.orElse(null))
         );
 
         response.status(201);
@@ -128,14 +124,14 @@ public class TransactionApi {
                 .length(1, config.maxDescriptionLength)
                 .optional();
 
-        long transactionId = database.applyTransaction(
+        long transactionId = manager.applyTransaction(new TransactionNewRecord(
                 sessionsRecord.getUserId(),
                 tagId,
                 accountId,
                 time,
                 delta,
                 description.orElse(null)
-        );
+        ));
 
         response.status(201);
 
@@ -147,10 +143,10 @@ public class TransactionApi {
 
         long transactionId = ParamsValidator
                 .longV(request, "transactionId")
-                .matches((id) -> database.userOwnTransaction(sessionsRecord.getUserId(), id))
+                .matches((id) -> manager.userOwnTransaction(sessionsRecord.getUserId(), id))
                 .require();
 
-        database.cancelTransaction(transactionId);
+        manager.cancelTransaction(transactionId);
 
         response.status(200);
 
@@ -162,7 +158,7 @@ public class TransactionApi {
 
         long transactionId = ParamsValidator
                 .longV(request, "transactionId")
-                .matches((id) -> database.userOwnTransaction(sessionsRecord.getUserId(), id))
+                .matches((id) -> manager.userOwnTransaction(sessionsRecord.getUserId(), id))
                 .require();
 
         long tagId = ParamsValidator
@@ -188,7 +184,7 @@ public class TransactionApi {
                 .length(1, config.maxDescriptionLength)
                 .optional();
 
-        database.editTransaction(transactionId, tagId, accountId, time, delta, description.orElse(null));
+        manager.editTransaction(transactionId, new TransactionEditRecord(tagId, accountId, time, delta, description.orElse(null)));
 
         response.status(200);
 
@@ -200,7 +196,7 @@ public class TransactionApi {
 
         TransactionsFilter filter = new TransactionsFilter(request);
 
-        int count = database.getTransactionsCount(sessionsRecord.getUserId(), filter);
+        int count = manager.getTransactionsCount(sessionsRecord.getUserId(), filter);
 
         response.status(200);
 
@@ -222,8 +218,7 @@ public class TransactionApi {
 
         TransactionsFilter filter = new TransactionsFilter(request);
 
-        List<Record> records = database.getTransactions(sessionsRecord.getUserId(), offset, count, filter);
-        List<TransactionEntry<?>> transactions = generator.prepareTransactions(records);
+        List<TransactionEntry<?>> transactions = manager.getTransactions(sessionsRecord.getUserId(), offset, count, filter);
 
         response.status(200);
 

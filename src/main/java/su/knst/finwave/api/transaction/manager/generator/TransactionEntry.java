@@ -1,4 +1,4 @@
-package su.knst.finwave.api.transaction.generator;
+package su.knst.finwave.api.transaction.manager.generator;
 
 import org.jooq.Record;
 
