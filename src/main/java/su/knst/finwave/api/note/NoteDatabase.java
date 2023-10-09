@@ -2,6 +2,7 @@ package su.knst.finwave.api.note;
 
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import su.knst.finwave.database.Database;
@@ -15,6 +16,7 @@ import static org.jooq.impl.DSL.currentOffsetDateTime;
 import static org.jooq.impl.DSL.when;
 import static su.knst.finwave.jooq.Tables.NOTES;
 
+@Singleton
 public class NoteDatabase {
     protected DSLContext context;
 
