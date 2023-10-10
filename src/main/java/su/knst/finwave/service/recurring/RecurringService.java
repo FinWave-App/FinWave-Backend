@@ -5,6 +5,7 @@ import com.google.inject.Singleton;
 import su.knst.finwave.api.transaction.manager.TransactionsManager;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
 import su.knst.finwave.api.transaction.recurring.RecurringTransactionDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.RecurringTransactionsRecord;
 import su.knst.finwave.service.AbstractService;
 
@@ -18,8 +19,8 @@ public class RecurringService extends AbstractService {
     protected TransactionsManager transactionsManager;
 
     @Inject
-    public RecurringService(RecurringTransactionDatabase database, TransactionsManager transactionsManager) {
-        this.database = database;
+    public RecurringService(DatabaseWorker databaseWorker, TransactionsManager transactionsManager) {
+        this.database = databaseWorker.get(RecurringTransactionDatabase.class);
         this.transactionsManager = transactionsManager;
     }
 

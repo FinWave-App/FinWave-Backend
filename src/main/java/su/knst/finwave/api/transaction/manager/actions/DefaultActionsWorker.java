@@ -9,6 +9,7 @@ import su.knst.finwave.api.transaction.manager.generator.AbstractMetadata;
 import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
+import su.knst.finwave.database.DatabaseWorker;
 
 import java.util.HashMap;
 import java.util.Optional;
@@ -16,9 +17,15 @@ import java.util.Optional;
 import static su.knst.finwave.jooq.Tables.ACCOUNTS;
 import static su.knst.finwave.jooq.Tables.TRANSACTIONS;
 
-public class DefaultActionsWorker implements TransactionActionsWorker<TransactionNewRecord, TransactionEditRecord, AbstractMetadata> {
+public class DefaultActionsWorker extends TransactionActionsWorker<TransactionNewRecord, TransactionEditRecord, AbstractMetadata> {
+    public DefaultActionsWorker(DatabaseWorker databaseWorker) {
+        super(databaseWorker);
+    }
+
     @Override
-    public long apply(DSLContext context, TransactionDatabase database, TransactionNewRecord newRecord) {
+    public long apply(DSLContext context, TransactionNewRecord newRecord) {
+        TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, context);
+
         Long currencyId = context.select(ACCOUNTS.CURRENCY_ID)
                 .from(ACCOUNTS)
                 .where(ACCOUNTS.ID.eq(newRecord.accountId()))
@@ -48,7 +55,9 @@ public class DefaultActionsWorker implements TransactionActionsWorker<Transactio
     }
 
     @Override
-    public void edit(DSLContext context, TransactionDatabase database, Record record, TransactionEditRecord newRecord) {
+    public void edit(DSLContext context, Record record, TransactionEditRecord newRecord) {
+        TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, context);
+
         context.update(ACCOUNTS)
                 .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(record.get(TRANSACTIONS.DELTA)))
                 .where(ACCOUNTS.ID.eq(record.get(TRANSACTIONS.ACCOUNT_ID)))
@@ -69,7 +78,9 @@ public class DefaultActionsWorker implements TransactionActionsWorker<Transactio
     }
 
     @Override
-    public void cancel(DSLContext context, TransactionDatabase database, Record record) {
+    public void cancel(DSLContext context, Record record) {
+        TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, context);
+
         context.update(ACCOUNTS)
                 .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.minus(record.get(TRANSACTIONS.DELTA)))
                 .where(ACCOUNTS.ID.eq(record.get(TRANSACTIONS.ACCOUNT_ID)))
@@ -79,7 +90,7 @@ public class DefaultActionsWorker implements TransactionActionsWorker<Transactio
     }
 
     @Override
-    public TransactionEntry<AbstractMetadata> prepareEntry(DSLContext context, TransactionDatabase database, Record record, HashMap<Long, TransactionEntry<?>> added) {
+    public TransactionEntry<AbstractMetadata> prepareEntry(DSLContext context, Record record, HashMap<Long, TransactionEntry<?>> added) {
         return new TransactionEntry<>(record, null);
     }
 }

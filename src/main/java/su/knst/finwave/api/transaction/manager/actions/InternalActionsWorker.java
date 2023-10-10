@@ -8,7 +8,9 @@ import su.knst.finwave.api.transaction.manager.generator.InternalTransferMetadat
 import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
+import su.knst.finwave.api.transaction.metadata.MetadataDatabase;
 import su.knst.finwave.api.transaction.metadata.MetadataType;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
 import su.knst.finwave.jooq.tables.records.TransactionsRecord;
 import su.knst.finwave.utils.params.InvalidParameterException;
@@ -18,33 +20,21 @@ import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.*;
 
-public class InternalActionsWorker implements TransactionActionsWorker<TransactionNewInternalRecord, TransactionEditRecord, InternalTransferMetadata> {
+public class InternalActionsWorker extends TransactionActionsWorker<TransactionNewInternalRecord, TransactionEditRecord, InternalTransferMetadata> {
     protected DefaultActionsWorker defaultActionsWorker;
 
-    public InternalActionsWorker(DefaultActionsWorker defaultActionsWorker) {
+    public InternalActionsWorker(DefaultActionsWorker defaultActionsWorker, DatabaseWorker databaseWorker) {
+        super(databaseWorker);
         this.defaultActionsWorker = defaultActionsWorker;
     }
 
     @Override
-    public long apply(DSLContext context, TransactionDatabase database, TransactionNewInternalRecord newRecord) {
-        long fromTransaction = defaultActionsWorker.apply(context, database, newRecord.from());
-        long toTransaction = defaultActionsWorker.apply(context, database, newRecord.to());
+    public long apply(DSLContext context, TransactionNewInternalRecord newRecord) {
+        MetadataDatabase metadataDatabase = databaseWorker.get(MetadataDatabase.class, context);
 
-        long internalId = context.insertInto(INTERNAL_TRANSFERS)
-                .set(INTERNAL_TRANSFERS.FROM_TRANSACTION_ID, fromTransaction)
-                .set(INTERNAL_TRANSFERS.TO_TRANSACTION_ID, toTransaction)
-                .returningResult(INTERNAL_TRANSFERS.ID)
-                .fetchOptional()
-                .map(Record1::component1)
-                .orElseThrow();
-
-        long transactionMeta = context.insertInto(TRANSACTIONS_METADATA)
-                .set(TRANSACTIONS_METADATA.TYPE, MetadataType.INTERNAL_TRANSFER.type)
-                .set(TRANSACTIONS_METADATA.ARG, internalId)
-                .returningResult(TRANSACTIONS_METADATA.ID)
-                .fetchOptional()
-                .map(Record1::component1)
-                .orElseThrow();
+        long fromTransaction = defaultActionsWorker.apply(context, newRecord.from());
+        long toTransaction = defaultActionsWorker.apply(context, newRecord.to());
+        long transactionMeta = metadataDatabase.createInternalTransferMetadata(fromTransaction, toTransaction);
 
         context.update(TRANSACTIONS)
                 .set(TRANSACTIONS.METADATA_ID, transactionMeta)
@@ -55,10 +45,11 @@ public class InternalActionsWorker implements TransactionActionsWorker<Transacti
     }
 
     @Override
-    public void edit(DSLContext context, TransactionDatabase database, Record record, TransactionEditRecord newRecord) {
-        InternalTransfersRecord internalTransfersRecord = context.selectFrom(INTERNAL_TRANSFERS)
-                .where(INTERNAL_TRANSFERS.ID.eq(record.get(TRANSACTIONS_METADATA.ARG)))
-                .fetchOptional()
+    public void edit(DSLContext context, Record record, TransactionEditRecord newRecord) {
+        MetadataDatabase metadataDatabase = databaseWorker.get(MetadataDatabase.class, context);
+
+        InternalTransfersRecord internalTransfersRecord = metadataDatabase
+                .getInternalTransferMeta(record.get(TRANSACTIONS_METADATA.ARG))
                 .orElseThrow();
 
         TransactionsRecord record2 = getSecondTransaction(record, internalTransfersRecord, context)
@@ -70,14 +61,15 @@ public class InternalActionsWorker implements TransactionActionsWorker<Transacti
         if (newRecord.delta().signum() == 0 || record2.getDelta().signum() == newRecord.delta().signum())
             throw new InvalidParameterException("delta");
 
-        defaultActionsWorker.edit(context, database, record, newRecord);
+        defaultActionsWorker.edit(context, record, newRecord);
     }
 
     @Override
-    public void cancel(DSLContext context, TransactionDatabase database, Record record) {
-        InternalTransfersRecord internalTransfersRecord = context.selectFrom(INTERNAL_TRANSFERS)
-                .where(INTERNAL_TRANSFERS.ID.eq(record.get(TRANSACTIONS_METADATA.ARG)))
-                .fetchOptional()
+    public void cancel(DSLContext context, Record record) {
+        MetadataDatabase metadataDatabase = databaseWorker.get(MetadataDatabase.class, context);
+
+        InternalTransfersRecord internalTransfersRecord = metadataDatabase
+                .getInternalTransferMeta(record.get(TRANSACTIONS_METADATA.ARG))
                 .orElseThrow();
 
         TransactionsRecord record2 = getSecondTransaction(record, internalTransfersRecord, context)
@@ -87,8 +79,8 @@ public class InternalActionsWorker implements TransactionActionsWorker<Transacti
                 .where(INTERNAL_TRANSFERS.ID.eq(internalTransfersRecord.getId()))
                 .execute();
 
-        defaultActionsWorker.cancel(context, database, record);
-        defaultActionsWorker.cancel(context, database, record2);
+        defaultActionsWorker.cancel(context, record);
+        defaultActionsWorker.cancel(context, record2);
 
         context.deleteFrom(TRANSACTIONS_METADATA)
                 .where(TRANSACTIONS_METADATA.ID.eq(record.get(TRANSACTIONS_METADATA.ID)))
@@ -96,7 +88,9 @@ public class InternalActionsWorker implements TransactionActionsWorker<Transacti
     }
 
     @Override
-    public TransactionEntry<InternalTransferMetadata> prepareEntry(DSLContext context, TransactionDatabase database, Record record, HashMap<Long, TransactionEntry<?>> added) {
+    public TransactionEntry<InternalTransferMetadata> prepareEntry(DSLContext context, Record record, HashMap<Long, TransactionEntry<?>> added) {
+        MetadataDatabase metadataDatabase = databaseWorker.get(MetadataDatabase.class, context);
+
         long metadataId = record.get(TRANSACTIONS.METADATA_ID);
         boolean linkedInResult = added
                 .values()
@@ -108,9 +102,8 @@ public class InternalActionsWorker implements TransactionActionsWorker<Transacti
         if (linkedInResult)
             return null;
 
-        InternalTransfersRecord metaRecord = context.selectFrom(INTERNAL_TRANSFERS)
-                .where(INTERNAL_TRANSFERS.ID.eq(record.get(TRANSACTIONS_METADATA.ARG)))
-                .fetchOptional()
+        InternalTransfersRecord metaRecord = metadataDatabase
+                .getInternalTransferMeta(record.get(TRANSACTIONS_METADATA.ARG))
                 .orElseThrow();
 
         TransactionEntry<?> secondTransaction = getSecondTransaction(record, metaRecord, context).map(TransactionEntry::new).orElseThrow();

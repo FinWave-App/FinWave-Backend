@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import su.knst.finwave.http.HttpWorker;
 import su.knst.finwave.logging.LogsInitializer;
 import su.knst.finwave.migration.FirstStartupInitializer;
+import su.knst.finwave.service.ServicesManager;
 
 import java.io.IOException;
 
@@ -21,8 +22,7 @@ public class Main {
         LogsInitializer.init();
 
         INJ.getInstance(FirstStartupInitializer.class);
-
         INJ.getInstance(HttpWorker.class);
-
+        INJ.getInstance(ServicesManager.class);
     }
 }

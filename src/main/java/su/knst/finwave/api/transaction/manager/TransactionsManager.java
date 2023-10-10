@@ -29,8 +29,8 @@ public class TransactionsManager {
     protected DatabaseWorker databaseWorker;
     protected TransactionDatabase transactionDatabase;
 
-    protected DefaultActionsWorker defaultActionsWorker = new DefaultActionsWorker();
-    protected InternalActionsWorker internalActionsWorker = new InternalActionsWorker(defaultActionsWorker);
+    protected DefaultActionsWorker defaultActionsWorker;
+    protected InternalActionsWorker internalActionsWorker;
     protected HashMap<MetadataType, TransactionActionsWorker<?,?,?>> actionsWorkers = new HashMap<>();
 
 
@@ -40,42 +40,35 @@ public class TransactionsManager {
         this.databaseWorker = databaseWorker;
         this.transactionDatabase = databaseWorker.get(TransactionDatabase.class);
 
+        this.defaultActionsWorker = new DefaultActionsWorker(databaseWorker);
+        this.internalActionsWorker = new InternalActionsWorker(defaultActionsWorker, databaseWorker);
+
         actionsWorkers.put(MetadataType.WITHOUT_METADATA, defaultActionsWorker);
         actionsWorkers.put(MetadataType.INTERNAL_TRANSFER, internalActionsWorker);
     }
 
     public long applyInternalTransfer(TransactionNewInternalRecord internalRecord) {
-        return context.transactionResult((configuration) -> {
-            DSLContext dsl = configuration.dsl();
-            TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, dsl);
-
-            return internalActionsWorker.apply(dsl, database, internalRecord);
-        });
+        return context.transactionResult((configuration) -> internalActionsWorker.apply(configuration.dsl(), internalRecord));
     }
 
     public long applyTransaction(TransactionNewRecord newRecord) {
-        return context.transactionResult((configuration) -> {
-            DSLContext dsl = configuration.dsl();
-            TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, dsl);
-
-            return defaultActionsWorker.apply(dsl, database, newRecord);
-        });
+        return context.transactionResult((configuration) -> defaultActionsWorker.apply(configuration.dsl(), newRecord));
     }
 
     public void editTransaction(long transactionId, TransactionEditRecord editRecord) {
-        runTransactionOverRecord(transactionId, (context, record, type, database) -> {
+        runTransactionOverRecord(transactionId, (context, record, type) -> {
             switch (type) {
-                case WITHOUT_METADATA -> defaultActionsWorker.edit(context, database, record, editRecord);
-                case INTERNAL_TRANSFER -> internalActionsWorker.edit(context, database, record, editRecord);
+                case WITHOUT_METADATA -> defaultActionsWorker.edit(context, record, editRecord);
+                case INTERNAL_TRANSFER -> internalActionsWorker.edit(context, record, editRecord);
             }
         });
     }
 
     public void cancelTransaction(long transactionId) {
-        runTransactionOverRecord(transactionId, (context, record, type, database) -> {
+        runTransactionOverRecord(transactionId, (context, record, type) -> {
             switch (type) {
-                case WITHOUT_METADATA -> defaultActionsWorker.cancel(context, database, record);
-                case INTERNAL_TRANSFER -> internalActionsWorker.cancel(context, database, record);
+                case WITHOUT_METADATA -> defaultActionsWorker.cancel(context, record);
+                case INTERNAL_TRANSFER -> internalActionsWorker.cancel(context, record);
             }
         });
     }
@@ -99,7 +92,7 @@ public class TransactionsManager {
                     .map(MetadataType::get)
                     .orElse(MetadataType.WITHOUT_METADATA);
 
-            TransactionEntry<?> entry = actionsWorkers.get(metadataType).prepareEntry(context, transactionDatabase, record, addedTransactions);
+            TransactionEntry<?> entry = actionsWorkers.get(metadataType).prepareEntry(context, record, addedTransactions);
 
             if (entry != null) {
                 result.add(entry);
@@ -131,11 +124,11 @@ public class TransactionsManager {
                     .map(MetadataType::get)
                     .orElse(MetadataType.WITHOUT_METADATA);
 
-            transaction.run(dsl, record, metadataType, database);
+            transaction.run(dsl, record, metadataType);
         });
     }
 
     interface Transaction {
-        void run(DSLContext context, Record record, MetadataType type, TransactionDatabase database);
+        void run(DSLContext context, Record record, MetadataType type);
     }
 }
