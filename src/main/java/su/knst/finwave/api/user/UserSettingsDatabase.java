@@ -4,7 +4,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.UsersSettingsRecord;
 
 import java.time.ZoneId;
@@ -12,14 +13,10 @@ import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.USERS_SETTINGS;
 
-@Singleton
-public class UserSettingsDatabase {
+public class UserSettingsDatabase extends AbstractDatabase {
 
-    protected DSLContext context;
-
-    @Inject
-    public UserSettingsDatabase(Database database) {
-        this.context = database.context();
+    public UserSettingsDatabase(DSLContext context) {
+        super(context);
     }
 
     public void initUserSettings(int userId, String lang, String timezone) {

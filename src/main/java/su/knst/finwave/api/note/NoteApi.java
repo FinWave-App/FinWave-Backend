@@ -8,6 +8,7 @@ import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.user.UserSettingsDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.NotesConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.NotesRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
@@ -27,10 +28,10 @@ public class NoteApi {
     protected UserSettingsDatabase userSettingsDatabase;
 
     @Inject
-    public NoteApi(Configs configs, NoteDatabase database, UserSettingsDatabase userSettingsDatabase) {
+    public NoteApi(Configs configs, DatabaseWorker databaseWorker) {
         this.config = configs.getState(new NotesConfig());
-        this.database = database;
-        this.userSettingsDatabase = userSettingsDatabase;
+        this.database = databaseWorker.get(NoteDatabase.class);
+        this.userSettingsDatabase = databaseWorker.get(UserSettingsDatabase.class);
     }
 
     public Object newNote(Request request, Response response) {

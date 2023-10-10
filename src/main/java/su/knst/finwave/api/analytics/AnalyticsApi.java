@@ -9,6 +9,7 @@ import su.knst.finwave.api.analytics.result.AnalyticsByMonths;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.AnalyticsConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.InvalidParameterException;
 
@@ -22,9 +23,9 @@ public class AnalyticsApi {
     protected AnalyticsConfig config;
 
     @Inject
-    public AnalyticsApi(Configs configs, AnalyticsDatabase database) {
+    public AnalyticsApi(Configs configs, DatabaseWorker databaseWorker) {
         this.config = configs.getState(new AnalyticsConfig());
-        this.database = database;
+        this.database = databaseWorker.get(AnalyticsDatabase.class);
     }
 
     public Object getAnalyticsByMonths(Request request, Response response) {

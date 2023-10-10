@@ -4,20 +4,17 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
 
 import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.*;
 
-@Singleton
-public class MetadataDatabase {
-    protected DSLContext context;
-
-    @Inject
-    public MetadataDatabase(Database database) {
-        this.context = database.context();
+public class MetadataDatabase extends AbstractDatabase {
+    public MetadataDatabase(DSLContext context) {
+        super(context);
     }
 
     public long createMetadata(MetadataType type, long arg) {

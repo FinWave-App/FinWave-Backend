@@ -7,6 +7,7 @@ import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.CurrencyConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.CurrenciesRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
@@ -23,8 +24,8 @@ public class CurrencyApi {
     protected CurrencyConfig config;
 
     @Inject
-    public CurrencyApi(CurrencyDatabase database, Configs configs) {
-        this.database = database;
+    public CurrencyApi(DatabaseWorker databaseWorker, Configs configs) {
+        this.database = databaseWorker.get(CurrencyDatabase.class);
 
         config = configs.getState(new CurrencyConfig());
     }

@@ -4,7 +4,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.AccountsRecord;
 
 import java.math.BigDecimal;
@@ -13,13 +14,10 @@ import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.*;
 
-@Singleton
-public class AccountDatabase {
-    protected DSLContext context;
+public class AccountDatabase extends AbstractDatabase {
 
-    @Inject
-    public AccountDatabase(Database database) {
-        this.context = database.context();
+    public AccountDatabase(DSLContext context) {
+        super(context);
     }
 
     public Optional<Long> newAccount(int userId, long tagId, long currencyId, String name, String description) {

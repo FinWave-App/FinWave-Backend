@@ -7,6 +7,7 @@ import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.TransactionConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.TransactionsTagsRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
@@ -23,8 +24,8 @@ public class TransactionTagApi {
     protected TransactionConfig config;
 
     @Inject
-    public TransactionTagApi(TransactionTagDatabase database, Configs configs) {
-        this.database = database;
+    public TransactionTagApi(DatabaseWorker databaseWorker, Configs configs) {
+        this.database = databaseWorker.get(TransactionTagDatabase.class);
         this.config = configs.getState(new TransactionConfig());
     }
 

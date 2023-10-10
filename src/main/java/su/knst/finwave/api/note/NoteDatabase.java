@@ -5,7 +5,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.NotesRecord;
 
 import java.time.OffsetDateTime;
@@ -16,13 +17,11 @@ import static org.jooq.impl.DSL.currentOffsetDateTime;
 import static org.jooq.impl.DSL.when;
 import static su.knst.finwave.jooq.Tables.NOTES;
 
-@Singleton
-public class NoteDatabase {
-    protected DSLContext context;
 
-    @Inject
-    public NoteDatabase(Database database) {
-        this.context = database.context();
+public class NoteDatabase extends AbstractDatabase {
+
+    public NoteDatabase(DSLContext context) {
+        super(context);
     }
 
     public Optional<Long> newNote(int userId, OffsetDateTime notificationTime, String note) {

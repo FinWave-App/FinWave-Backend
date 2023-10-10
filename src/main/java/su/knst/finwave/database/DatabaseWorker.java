@@ -11,12 +11,13 @@ import org.slf4j.LoggerFactory;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.DatabaseConfig;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
 @Singleton
-public class Database {
-    protected static final Logger log = LoggerFactory.getLogger(Database.class);
+public class DatabaseWorker {
+    protected static final Logger log = LoggerFactory.getLogger(DatabaseWorker.class);
     protected DatabaseConfig config;
 
     protected Flyway flyway;
@@ -24,7 +25,7 @@ public class Database {
     protected DSLContext context;
 
     @Inject
-    public Database(Configs configs) {
+    public DatabaseWorker(Configs configs) {
         config = configs.getState(new DatabaseConfig());
 
         log.info("Init database...");
@@ -62,7 +63,19 @@ public class Database {
         }
     }
 
-    public DSLContext context() {
+    public DSLContext getDefaultContext() {
         return context;
+    }
+
+    public <T extends AbstractDatabase> T get(Class<T> tClass, DSLContext context) {
+        try {
+            return tClass.getConstructor(DSLContext.class).newInstance(context);
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T extends AbstractDatabase> T get(Class<T> tClass) {
+        return get(tClass, context);
     }
 }

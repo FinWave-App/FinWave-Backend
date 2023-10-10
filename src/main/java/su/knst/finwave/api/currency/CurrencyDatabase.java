@@ -4,7 +4,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.CurrenciesRecord;
 
 import java.util.List;
@@ -12,13 +13,11 @@ import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.CURRENCIES;
 
-@Singleton
-public class CurrencyDatabase {
-    protected DSLContext context;
 
-    @Inject
-    public CurrencyDatabase(Database database) {
-        this.context = database.context();
+public class CurrencyDatabase extends AbstractDatabase {
+
+    public CurrencyDatabase(DSLContext context) {
+        super(context);
     }
 
     public Optional<Long> newCurrency(int ownerId, String code, String symbol, short decimals, String description) {

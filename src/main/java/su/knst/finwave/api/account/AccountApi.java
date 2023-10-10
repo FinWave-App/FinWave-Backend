@@ -6,14 +6,17 @@ import spark.Request;
 import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.account.tag.AccountTagDatabase;
+import su.knst.finwave.api.currency.CurrencyApi;
 import su.knst.finwave.api.currency.CurrencyDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.AccountsConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.AccountsRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.ParamsValidator;
 
+import javax.xml.crypto.Data;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -29,10 +32,11 @@ public class AccountApi {
     protected AccountsConfig config;
 
     @Inject
-    public AccountApi(AccountDatabase database, AccountTagDatabase tagDatabase, CurrencyDatabase currencyDatabase, Configs configs) {
-        this.database = database;
-        this.tagDatabase = tagDatabase;
-        this.currencyDatabase = currencyDatabase;
+    public AccountApi(DatabaseWorker databaseWorker, Configs configs) {
+        this.database = databaseWorker.get(AccountDatabase.class);
+        this.tagDatabase = databaseWorker.get(AccountTagDatabase.class);
+        this.currencyDatabase = databaseWorker.get(CurrencyDatabase.class);
+
         this.config = configs.getState(new AccountsConfig());
     }
 

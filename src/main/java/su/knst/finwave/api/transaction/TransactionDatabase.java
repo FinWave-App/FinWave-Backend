@@ -1,17 +1,9 @@
 package su.knst.finwave.api.transaction;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.*;
 import org.jooq.Record;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
-import su.knst.finwave.api.transaction.metadata.MetadataDatabase;
-import su.knst.finwave.api.transaction.metadata.MetadataType;
-import su.knst.finwave.database.Database;
-import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
-import su.knst.finwave.jooq.tables.records.TransactionsMetadataRecord;
-import su.knst.finwave.jooq.tables.records.TransactionsRecord;
-import su.knst.finwave.utils.params.InvalidParameterException;
+import su.knst.finwave.database.AbstractDatabase;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -20,11 +12,10 @@ import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.*;
 
-public class TransactionDatabase {
-    protected DSLContext context;
+public class TransactionDatabase extends AbstractDatabase {
 
     public TransactionDatabase(DSLContext context) {
-        this.context = context;
+        super(context);
     }
 
     public Optional<Long> applyTransaction(int userId, long tagId, long accountId, long currencyId, OffsetDateTime created, BigDecimal delta, String description) {
@@ -72,7 +63,7 @@ public class TransactionDatabase {
                 .fetch();
     }
 
-    public Condition generateFilterCondition(int userId, TransactionsFilter filter) {
+    public static Condition generateFilterCondition(int userId, TransactionsFilter filter) {
         Condition condition = TRANSACTIONS.OWNER_ID.eq(userId);
 
         if (filter.getTagsIds() != null)
@@ -96,7 +87,7 @@ public class TransactionDatabase {
         return condition;
     }
 
-    protected <T> Condition generateFilterAnyCondition(TableField<?, T> field, List<T> values) {
+    protected static <T> Condition generateFilterAnyCondition(TableField<?, T> field, List<T> values) {
         Condition condition = null;
 
         for (T value : values) {

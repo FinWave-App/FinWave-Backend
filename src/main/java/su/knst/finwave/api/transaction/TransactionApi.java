@@ -15,6 +15,7 @@ import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
 import su.knst.finwave.api.transaction.tag.TransactionTagDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.TransactionConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.InvalidParameterException;
@@ -33,11 +34,11 @@ public class TransactionApi {
     protected TransactionConfig config;
 
     @Inject
-    public TransactionApi(TransactionsManager manager, TransactionTagDatabase tagDatabase, AccountDatabase accountDatabase, Configs configs) {
+    public TransactionApi(TransactionsManager manager, DatabaseWorker databaseWorker, Configs configs) {
         this.config = configs.getState(new TransactionConfig());
         this.manager = manager;
-        this.tagDatabase = tagDatabase;
-        this.accountDatabase = accountDatabase;
+        this.tagDatabase = databaseWorker.get(TransactionTagDatabase.class);
+        this.accountDatabase = databaseWorker.get(AccountDatabase.class);
     }
 
     public Object newInternalTransfer(Request request, Response response) {

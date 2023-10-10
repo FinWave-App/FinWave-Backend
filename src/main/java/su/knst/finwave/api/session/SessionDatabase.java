@@ -3,7 +3,8 @@ package su.knst.finwave.api.session;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 
 import java.time.LocalDateTime;
@@ -11,13 +12,10 @@ import java.util.List;
 
 import static su.knst.finwave.jooq.Tables.USERS_SESSIONS;
 
-@Singleton
-public class SessionDatabase {
-    protected DSLContext context;
+public class SessionDatabase extends AbstractDatabase {
 
-    @Inject
-    public SessionDatabase(Database database) {
-        this.context = database.context();
+    public SessionDatabase(DSLContext context) {
+        super(context);
     }
 
     public void newSession(int userId, String token, int lifetimeDays, String description) {

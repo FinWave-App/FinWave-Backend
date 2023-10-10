@@ -4,7 +4,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.utils.PBKDF2;
 
 import java.security.NoSuchAlgorithmException;
@@ -13,13 +14,10 @@ import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.USERS;
 
-@Singleton
-public class UserDatabase {
-    protected DSLContext context;
+public class UserDatabase extends AbstractDatabase {
 
-    @Inject
-    public UserDatabase(Database database) {
-        this.context = database.context();
+    public UserDatabase(DSLContext context) {
+        super(context);
     }
 
     public boolean userExists(String username) {

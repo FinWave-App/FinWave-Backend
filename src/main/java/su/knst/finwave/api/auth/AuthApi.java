@@ -8,6 +8,7 @@ import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.session.SessionDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.UserConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.UsersRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.ParamsValidator;
@@ -25,9 +26,9 @@ public class AuthApi {
     protected SessionDatabase sessionDatabase;
 
     @Inject
-    public AuthApi(AuthDatabase database, SessionDatabase sessionDatabase, Configs configs) {
-        this.database = database;
-        this.sessionDatabase = sessionDatabase;
+    public AuthApi(DatabaseWorker databaseWorker, Configs configs) {
+        this.database = databaseWorker.get(AuthDatabase.class);
+        this.sessionDatabase = databaseWorker.get(SessionDatabase.class);
         this.config = configs.getState(new UserConfig());
     }
 

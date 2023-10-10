@@ -7,6 +7,7 @@ import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.AccountsConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.AccountsTagsRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
@@ -23,8 +24,8 @@ public class AccountTagApi {
     protected AccountTagDatabase database;
 
     @Inject
-    public AccountTagApi(AccountTagDatabase database, Configs configs) {
-        this.database = database;
+    public AccountTagApi(DatabaseWorker databaseWorker, Configs configs) {
+        this.database = databaseWorker.get(AccountTagDatabase.class);
         this.config = configs.getState(new AccountsConfig());
     }
 

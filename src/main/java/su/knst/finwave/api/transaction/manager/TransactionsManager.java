@@ -5,7 +5,6 @@ import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import su.knst.finwave.api.transaction.TransactionDatabase;
-import su.knst.finwave.api.transaction.TransactionDatabaseProvider;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
 import su.knst.finwave.api.transaction.manager.actions.TransactionActionsWorker;
 import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
@@ -15,7 +14,7 @@ import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
 import su.knst.finwave.api.transaction.metadata.MetadataType;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.DatabaseWorker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,8 +25,9 @@ import static su.knst.finwave.jooq.Tables.TRANSACTIONS_METADATA;
 
 @Singleton
 public class TransactionsManager {
-    protected TransactionDatabaseProvider provider;
     protected DSLContext context;
+    protected DatabaseWorker databaseWorker;
+    protected TransactionDatabase transactionDatabase;
 
     protected DefaultActionsWorker defaultActionsWorker = new DefaultActionsWorker();
     protected InternalActionsWorker internalActionsWorker = new InternalActionsWorker(defaultActionsWorker);
@@ -35,9 +35,10 @@ public class TransactionsManager {
 
 
     @Inject
-    public TransactionsManager(TransactionDatabaseProvider provider, Database database) {
-        this.provider = provider;
-        this.context = database.context();
+    public TransactionsManager(DatabaseWorker databaseWorker) {
+        this.context = databaseWorker.getDefaultContext();
+        this.databaseWorker = databaseWorker;
+        this.transactionDatabase = databaseWorker.get(TransactionDatabase.class);
 
         actionsWorkers.put(MetadataType.WITHOUT_METADATA, defaultActionsWorker);
         actionsWorkers.put(MetadataType.INTERNAL_TRANSFER, internalActionsWorker);
@@ -46,7 +47,7 @@ public class TransactionsManager {
     public long applyInternalTransfer(TransactionNewInternalRecord internalRecord) {
         return context.transactionResult((configuration) -> {
             DSLContext dsl = configuration.dsl();
-            TransactionDatabase database = provider.get(dsl);
+            TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, dsl);
 
             return internalActionsWorker.apply(dsl, database, internalRecord);
         });
@@ -55,7 +56,7 @@ public class TransactionsManager {
     public long applyTransaction(TransactionNewRecord newRecord) {
         return context.transactionResult((configuration) -> {
             DSLContext dsl = configuration.dsl();
-            TransactionDatabase database = provider.get(dsl);
+            TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, dsl);
 
             return defaultActionsWorker.apply(dsl, database, newRecord);
         });
@@ -88,8 +89,7 @@ public class TransactionsManager {
     }
 
     public List<TransactionEntry<?>> getTransactions(int userId, int offset, int count, TransactionsFilter filter) {
-        TransactionDatabase database = provider.get();
-        List<Record> records = database.getTransactions(userId, offset, count, filter);
+        List<Record> records = transactionDatabase.getTransactions(userId, offset, count, filter);
 
         ArrayList<TransactionEntry<?>> result = new ArrayList<>();
         HashMap<Long, TransactionEntry<?>> addedTransactions = new HashMap<>();
@@ -99,7 +99,7 @@ public class TransactionsManager {
                     .map(MetadataType::get)
                     .orElse(MetadataType.WITHOUT_METADATA);
 
-            TransactionEntry<?> entry = actionsWorkers.get(metadataType).prepareEntry(context, database, record, addedTransactions);
+            TransactionEntry<?> entry = actionsWorkers.get(metadataType).prepareEntry(context, transactionDatabase, record, addedTransactions);
 
             if (entry != null) {
                 result.add(entry);
@@ -111,17 +111,17 @@ public class TransactionsManager {
     }
 
     public int getTransactionsCount(int userId, TransactionsFilter filter) {
-        return provider.get().getTransactionsCount(userId, filter);
+        return transactionDatabase.getTransactionsCount(userId, filter);
     }
 
     public boolean userOwnTransaction(int userId, long transactionId) {
-        return provider.get().userOwnTransaction(userId, transactionId);
+        return transactionDatabase.userOwnTransaction(userId, transactionId);
     }
 
     protected void runTransactionOverRecord(long transactionId, Transaction transaction) {
         context.transaction((configuration) -> {
             DSLContext dsl = configuration.dsl();
-            TransactionDatabase database = provider.get(dsl);
+            TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, dsl);
 
             Record record = database
                     .getTransaction(transactionId)

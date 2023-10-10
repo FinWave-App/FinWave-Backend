@@ -3,7 +3,8 @@ package su.knst.finwave.api.auth;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.DSLContext;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.UsersRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.PBKDF2;
@@ -15,13 +16,10 @@ import java.util.Optional;
 import static su.knst.finwave.jooq.Tables.USERS;
 import static su.knst.finwave.jooq.Tables.USERS_SESSIONS;
 
-@Singleton
-public class AuthDatabase {
-    protected DSLContext context;
+public class AuthDatabase extends AbstractDatabase{
 
-    @Inject
-    public AuthDatabase(Database database) {
-        this.context = database.context();
+    public AuthDatabase(DSLContext context) {
+        super(context);
     }
 
     public Optional<UsersRecord> authUser(String login, String password) {

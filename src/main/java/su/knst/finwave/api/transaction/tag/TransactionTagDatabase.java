@@ -5,7 +5,8 @@ import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.postgres.extensions.types.Ltree;
-import su.knst.finwave.database.Database;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.TransactionsTagsRecord;
 
 import java.util.List;
@@ -13,14 +14,10 @@ import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.TRANSACTIONS_TAGS;
 
-@Singleton
-public class TransactionTagDatabase {
+public class TransactionTagDatabase extends AbstractDatabase {
 
-    protected DSLContext context;
-
-    @Inject
-    public TransactionTagDatabase(Database database) {
-        this.context = database.context();
+    public TransactionTagDatabase(DSLContext context) {
+        super(context);
     }
 
     public Optional<Long> newTag(int userId, short type, Long parentId, String name, String description) {

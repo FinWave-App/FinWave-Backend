@@ -7,6 +7,7 @@ import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.UserConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.ParamsValidator;
@@ -23,8 +24,8 @@ public class SessionApi {
     protected UserConfig config;
 
     @Inject
-    public SessionApi(SessionDatabase database, Configs configs) {
-        this.database = database;
+    public SessionApi(DatabaseWorker databaseWorker, Configs configs) {
+        this.database = databaseWorker.get(SessionDatabase.class);
         this.config = configs.getState(new UserConfig());
     }
 

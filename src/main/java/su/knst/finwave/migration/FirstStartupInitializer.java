@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.api.currency.CurrencyDatabase;
 import su.knst.finwave.api.user.UserDatabase;
+import su.knst.finwave.database.DatabaseWorker;
 
 import java.util.Optional;
 
@@ -17,9 +18,9 @@ public class FirstStartupInitializer {
     protected CurrencyDatabase currencyDatabase;
 
     @Inject
-    public FirstStartupInitializer(UserDatabase userDatabase, CurrencyDatabase currencyDatabase) {
-        this.userDatabase = userDatabase;
-        this.currencyDatabase = currencyDatabase;
+    public FirstStartupInitializer(DatabaseWorker databaseWorker) {
+        this.userDatabase = databaseWorker.get(UserDatabase.class);
+        this.currencyDatabase = databaseWorker.get(CurrencyDatabase.class);
 
         initRoot();
         initCurrencies();

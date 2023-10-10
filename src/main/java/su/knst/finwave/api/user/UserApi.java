@@ -10,6 +10,7 @@ import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.session.SessionDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.UserConfig;
+import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.ParamsValidator;
@@ -30,10 +31,10 @@ public class UserApi {
     protected UserConfig config;
 
     @Inject
-    public UserApi(UserDatabase database, UserSettingsDatabase userSettingsDatabase, SessionDatabase sessionDatabase, Configs configs) {
-        this.database = database;
-        this.userSettingsDatabase = userSettingsDatabase;
-        this.sessionDatabase = sessionDatabase;
+    public UserApi(DatabaseWorker databaseWorker, Configs configs) {
+        this.database = databaseWorker.get(UserDatabase.class);
+        this.userSettingsDatabase = databaseWorker.get(UserSettingsDatabase.class);
+        this.sessionDatabase = databaseWorker.get(SessionDatabase.class);
 
         this.config = configs.getState(new UserConfig());
     }
