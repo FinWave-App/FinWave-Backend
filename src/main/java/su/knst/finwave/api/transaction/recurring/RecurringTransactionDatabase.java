@@ -13,7 +13,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static su.knst.finwave.jooq.Tables.RECURRING_TRANSACTIONS;
+import static su.knst.finwave.jooq.Tables.*;
+import static su.knst.finwave.jooq.Tables.TRANSACTIONS;
 
 
 public class RecurringTransactionDatabase extends AbstractDatabase {
@@ -22,9 +23,16 @@ public class RecurringTransactionDatabase extends AbstractDatabase {
         super(context);
     }
 
-    public Optional<Long> newRecurring(int userId, long tagId, long accountId, long currencyId,
+    public Optional<Long> newRecurring(int userId, long tagId, long accountId,
                                        RepeatType repeatType, short repeatArg, NotificationMode notificationMode,
                                        OffsetDateTime nextRepeat, BigDecimal delta, String description) {
+
+        Long currencyId = context.select(ACCOUNTS.CURRENCY_ID)
+                .from(ACCOUNTS)
+                .where(ACCOUNTS.ID.eq(accountId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElseThrow();
 
         return context.insertInto(RECURRING_TRANSACTIONS)
                 .set(RECURRING_TRANSACTIONS.OWNER_ID, userId)
@@ -41,6 +49,52 @@ public class RecurringTransactionDatabase extends AbstractDatabase {
                 .returningResult(RECURRING_TRANSACTIONS.ID)
                 .fetchOptional()
                 .map(Record1::component1);
+    }
+
+    public void editRecurring(long id, long tagId, long accountId,
+                                       RepeatType repeatType, short repeatArg, NotificationMode notificationMode,
+                                       OffsetDateTime nextRepeat, BigDecimal delta, String description) {
+
+        Long currencyId = context.select(ACCOUNTS.CURRENCY_ID)
+                .from(ACCOUNTS)
+                .where(ACCOUNTS.ID.eq(accountId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElseThrow();
+
+        context.update(RECURRING_TRANSACTIONS)
+                .set(RECURRING_TRANSACTIONS.TAG_ID, tagId)
+                .set(RECURRING_TRANSACTIONS.ACCOUNT_ID, accountId)
+                .set(RECURRING_TRANSACTIONS.CURRENCY_ID, currencyId)
+                .set(RECURRING_TRANSACTIONS.REPEAT_FUNC, (short)repeatType.ordinal())
+                .set(RECURRING_TRANSACTIONS.REPEAT_FUNC_ARG, repeatArg)
+                .set(RECURRING_TRANSACTIONS.NOTIFICATION_MODE, (short)notificationMode.ordinal())
+                .set(RECURRING_TRANSACTIONS.LAST_REPEAT, OffsetDateTime.MIN)
+                .set(RECURRING_TRANSACTIONS.NEXT_REPEAT, nextRepeat)
+                .set(RECURRING_TRANSACTIONS.DELTA, delta)
+                .set(RECURRING_TRANSACTIONS.DESCRIPTION, description)
+                .where(RECURRING_TRANSACTIONS.ID.eq(id))
+                .execute();
+    }
+
+    public void deleteRecurring(long id) {
+        context.deleteFrom(RECURRING_TRANSACTIONS)
+                .where(RECURRING_TRANSACTIONS.ID.eq(id))
+                .execute();
+    }
+
+    public List<RecurringTransactionsRecord> getList(int userId) {
+        return context.selectFrom(RECURRING_TRANSACTIONS)
+                .where(RECURRING_TRANSACTIONS.OWNER_ID.eq(userId))
+                .fetch();
+    }
+
+    public boolean userOwnRecurringTransaction(int userId, long id) {
+        return context.select(RECURRING_TRANSACTIONS.ID)
+                .from(RECURRING_TRANSACTIONS)
+                .where(RECURRING_TRANSACTIONS.OWNER_ID.eq(userId).and(RECURRING_TRANSACTIONS.ID.eq(id)))
+                .fetchOptional()
+                .isPresent();
     }
 
     public List<RecurringTransactionsRecord> getRecurringForProcessing() {

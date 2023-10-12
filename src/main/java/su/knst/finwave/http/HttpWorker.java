@@ -14,6 +14,7 @@ import su.knst.finwave.api.currency.CurrencyApi;
 import su.knst.finwave.api.note.NoteApi;
 import su.knst.finwave.api.session.SessionApi;
 import su.knst.finwave.api.transaction.TransactionApi;
+import su.knst.finwave.api.transaction.recurring.RecurringTransactionApi;
 import su.knst.finwave.api.transaction.tag.TransactionTagApi;
 import su.knst.finwave.api.user.UserApi;
 import su.knst.finwave.config.Configs;
@@ -36,6 +37,7 @@ public class HttpWorker {
     protected CurrencyApi currencyApi;
     protected TransactionApi transactionApi;
     protected TransactionTagApi transactionTagApi;
+    protected RecurringTransactionApi recurringTransactionApi;
     protected AnalyticsApi analyticsApi;
     protected SessionApi sessionApi;
 
@@ -51,6 +53,7 @@ public class HttpWorker {
                       CurrencyApi currencyApi,
                       TransactionApi transactionApi,
                       TransactionTagApi transactionTagApi,
+                      RecurringTransactionApi recurringTransactionApi,
                       AnalyticsApi analyticsApi) {
         this.config = configs.getState(new HttpConfig());
 
@@ -65,6 +68,7 @@ public class HttpWorker {
         this.transactionApi = transactionApi;
         this.transactionTagApi = transactionTagApi;
         this.analyticsApi = analyticsApi;
+        this.recurringTransactionApi = recurringTransactionApi;
 
         setup();
         patches();
@@ -129,6 +133,13 @@ public class HttpWorker {
                     post("/editParent", transactionTagApi::editTagParent);
                     post("/editName", transactionTagApi::editTagName);
                     post("/editDescription", transactionTagApi::editTagDescription);
+                });
+
+                path("/recurring", () -> {
+                    get("/getList", recurringTransactionApi::getList);
+                    post("/new", recurringTransactionApi::newRecurringTransaction);
+                    post("/edit", recurringTransactionApi::editRecurringTransaction);
+                    post("/delete", recurringTransactionApi::deleteTransaction);
                 });
 
                 get("/getList", transactionApi::getTransactions);

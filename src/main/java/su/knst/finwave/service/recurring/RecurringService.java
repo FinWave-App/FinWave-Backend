@@ -29,7 +29,7 @@ public class RecurringService extends AbstractService {
         List<RecurringTransactionsRecord> records = database.getRecurringForProcessing();
 
         for (RecurringTransactionsRecord record : records) {
-            long newTransaction = transactionsManager.applyTransaction(new TransactionNewRecord(
+            long newTransaction = transactionsManager.applyRecurringTransaction(new TransactionNewRecord(
                     record.getOwnerId(),
                     record.getTagId(),
                     record.getAccountId(),
@@ -41,7 +41,7 @@ public class RecurringService extends AbstractService {
             database.updateRecurring(
                     record.getId(),
                     record.getNextRepeat(),
-                    NextRepeatCalculator.calculate(record.getNextRepeat(), record.getRepeatFunc(), record.getRepeatFuncArg())
+                    NextRepeatTools.calculate(record.getNextRepeat(), record.getRepeatFunc(), record.getRepeatFuncArg())
             );
         }
     }

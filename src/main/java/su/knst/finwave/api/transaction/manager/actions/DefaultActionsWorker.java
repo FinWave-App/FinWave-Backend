@@ -55,7 +55,7 @@ public class DefaultActionsWorker extends TransactionActionsWorker<TransactionNe
     }
 
     @Override
-    public void edit(DSLContext context, Record record, TransactionEditRecord newRecord) {
+    public void edit(DSLContext context, Record record, TransactionEditRecord editRecord) {
         TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, context);
 
         context.update(ACCOUNTS)
@@ -65,8 +65,8 @@ public class DefaultActionsWorker extends TransactionActionsWorker<TransactionNe
 
         Optional<Long> currencyId = context
                 .update(ACCOUNTS)
-                .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(newRecord.delta()))
-                .where(ACCOUNTS.ID.eq(newRecord.accountId()))
+                .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(editRecord.delta()))
+                .where(ACCOUNTS.ID.eq(editRecord.accountId()))
                 .returningResult(ACCOUNTS.CURRENCY_ID)
                 .fetchOptional()
                 .map(Record1::component1);
@@ -74,7 +74,7 @@ public class DefaultActionsWorker extends TransactionActionsWorker<TransactionNe
         if (currencyId.isEmpty())
             throw new RuntimeException("Failed to get currency id and modify account");
 
-        database.editTransaction(record.get(TRANSACTIONS.ID), newRecord.tagId(), newRecord.accountId(), currencyId.get(), newRecord.created(), newRecord.delta(), newRecord.description());
+        database.editTransaction(record.get(TRANSACTIONS.ID), editRecord.tagId(), editRecord.accountId(), currencyId.get(), editRecord.created(), editRecord.delta(), editRecord.description());
     }
 
     @Override

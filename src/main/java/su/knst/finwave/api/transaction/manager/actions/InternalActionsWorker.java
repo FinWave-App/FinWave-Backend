@@ -45,7 +45,7 @@ public class InternalActionsWorker extends TransactionActionsWorker<TransactionN
     }
 
     @Override
-    public void edit(DSLContext context, Record record, TransactionEditRecord newRecord) {
+    public void edit(DSLContext context, Record record, TransactionEditRecord editRecord) {
         MetadataDatabase metadataDatabase = databaseWorker.get(MetadataDatabase.class, context);
 
         InternalTransfersRecord internalTransfersRecord = metadataDatabase
@@ -55,13 +55,13 @@ public class InternalActionsWorker extends TransactionActionsWorker<TransactionN
         TransactionsRecord record2 = getSecondTransaction(record, internalTransfersRecord, context)
                 .orElseThrow(() -> new RuntimeException("Second transaction not exists"));
 
-        if (record2.getAccountId().equals(newRecord.accountId()))
+        if (record2.getAccountId().equals(editRecord.accountId()))
             throw new InvalidParameterException("accountId");
 
-        if (newRecord.delta().signum() == 0 || record2.getDelta().signum() == newRecord.delta().signum())
+        if (editRecord.delta().signum() == 0 || record2.getDelta().signum() == editRecord.delta().signum())
             throw new InvalidParameterException("delta");
 
-        defaultActionsWorker.edit(context, record, newRecord);
+        defaultActionsWorker.edit(context, record, editRecord);
     }
 
     @Override

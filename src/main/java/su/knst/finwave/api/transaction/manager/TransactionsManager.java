@@ -6,6 +6,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import su.knst.finwave.api.transaction.TransactionDatabase;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
+import su.knst.finwave.api.transaction.manager.actions.RecurringActionsWorker;
 import su.knst.finwave.api.transaction.manager.actions.TransactionActionsWorker;
 import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.actions.DefaultActionsWorker;
@@ -31,6 +32,8 @@ public class TransactionsManager {
 
     protected DefaultActionsWorker defaultActionsWorker;
     protected InternalActionsWorker internalActionsWorker;
+    protected RecurringActionsWorker recurringActionsWorker;
+
     protected HashMap<MetadataType, TransactionActionsWorker<?,?,?>> actionsWorkers = new HashMap<>();
 
 
@@ -42,9 +45,11 @@ public class TransactionsManager {
 
         this.defaultActionsWorker = new DefaultActionsWorker(databaseWorker);
         this.internalActionsWorker = new InternalActionsWorker(defaultActionsWorker, databaseWorker);
+        this.recurringActionsWorker = new RecurringActionsWorker(databaseWorker);
 
         actionsWorkers.put(MetadataType.WITHOUT_METADATA, defaultActionsWorker);
         actionsWorkers.put(MetadataType.INTERNAL_TRANSFER, internalActionsWorker);
+        actionsWorkers.put(MetadataType.RECURRING, recurringActionsWorker);
     }
 
     public long applyInternalTransfer(TransactionNewInternalRecord internalRecord) {
@@ -55,11 +60,16 @@ public class TransactionsManager {
         return context.transactionResult((configuration) -> defaultActionsWorker.apply(configuration.dsl(), newRecord));
     }
 
+    public long applyRecurringTransaction(TransactionNewRecord newRecord) {
+        return context.transactionResult((configuration) -> recurringActionsWorker.apply(configuration.dsl(), newRecord));
+    }
+
     public void editTransaction(long transactionId, TransactionEditRecord editRecord) {
         runTransactionOverRecord(transactionId, (context, record, type) -> {
             switch (type) {
                 case WITHOUT_METADATA -> defaultActionsWorker.edit(context, record, editRecord);
                 case INTERNAL_TRANSFER -> internalActionsWorker.edit(context, record, editRecord);
+                case RECURRING -> recurringActionsWorker.edit(context, record, editRecord);
             }
         });
     }
@@ -69,6 +79,7 @@ public class TransactionsManager {
             switch (type) {
                 case WITHOUT_METADATA -> defaultActionsWorker.cancel(context, record);
                 case INTERNAL_TRANSFER -> internalActionsWorker.cancel(context, record);
+                case RECURRING -> recurringActionsWorker.cancel(context, record);
             }
         });
     }

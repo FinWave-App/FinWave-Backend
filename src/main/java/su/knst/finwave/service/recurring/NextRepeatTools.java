@@ -4,7 +4,7 @@ import su.knst.finwave.api.transaction.recurring.RepeatType;
 
 import java.time.OffsetDateTime;
 
-public class NextRepeatCalculator {
+public class NextRepeatTools {
     public static OffsetDateTime calculate(OffsetDateTime lastRepeat, short type, short arg) {
         RepeatType repeatType = RepeatType.values()[type];
 
@@ -24,5 +24,21 @@ public class NextRepeatCalculator {
         }
 
         return lastRepeat.plusMonths(1);
+    }
+
+    public static boolean validateArg(RepeatType type, short arg) {
+        if (type == RepeatType.IN_DAYS)
+            return arg > 0 && arg < 512;
+
+        return true;
+    }
+
+    public static boolean validateArg(short type, short arg) {
+        RepeatType[] values = RepeatType.values();
+
+        if (type < 0 || type >= values.length)
+            return false;
+
+        return validateArg(values[type], arg);
     }
 }
