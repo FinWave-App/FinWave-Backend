@@ -86,6 +86,7 @@ public class RecurringTransactionDatabase extends AbstractDatabase {
     public List<RecurringTransactionsRecord> getList(int userId) {
         return context.selectFrom(RECURRING_TRANSACTIONS)
                 .where(RECURRING_TRANSACTIONS.OWNER_ID.eq(userId))
+                .orderBy(RECURRING_TRANSACTIONS.NEXT_REPEAT.asc(), RECURRING_TRANSACTIONS.ID.desc())
                 .fetch();
     }
 

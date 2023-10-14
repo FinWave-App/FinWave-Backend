@@ -106,7 +106,7 @@ public class RecurringTransactionApi {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         long recurringId = ParamsValidator
-                .longV(request, "recurringId")
+                .longV(request, "recurringTransactionId")
                 .matches((id) -> database.userOwnRecurringTransaction(sessionsRecord.getUserId(), id))
                 .require();
 
@@ -214,8 +214,8 @@ public class RecurringTransactionApi {
             public final long currencyId;
             public final OffsetDateTime lastRepeat;
             public final OffsetDateTime nextRepeat;
-            public final short repeatFunc;
-            public final short repeatFuncArg;
+            public final short repeatType;
+            public final short repeatArg;
             public final int notificationMode;
             public final BigDecimal delta;
             public final String description;
@@ -235,15 +235,15 @@ public class RecurringTransactionApi {
                 );
             }
 
-            public Entry(long recurringTransactionId, long tagId, long accountId, long currencyId, OffsetDateTime lastRepeat, OffsetDateTime nextRepeat, short repeatFunc, short repeatFuncArg, int notificationMode, BigDecimal delta, String description) {
+            public Entry(long recurringTransactionId, long tagId, long accountId, long currencyId, OffsetDateTime lastRepeat, OffsetDateTime nextRepeat, short repeatType, short repeatArg, int notificationMode, BigDecimal delta, String description) {
                 this.recurringTransactionId = recurringTransactionId;
                 this.tagId = tagId;
                 this.accountId = accountId;
                 this.currencyId = currencyId;
                 this.lastRepeat = lastRepeat;
                 this.nextRepeat = nextRepeat;
-                this.repeatFunc = repeatFunc;
-                this.repeatFuncArg = repeatFuncArg;
+                this.repeatType = repeatType;
+                this.repeatArg = repeatArg;
                 this.notificationMode = notificationMode;
                 this.delta = delta;
                 this.description = description;
