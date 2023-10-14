@@ -9,17 +9,14 @@ public class NextRepeatTools {
         RepeatType repeatType = RepeatType.values()[type];
 
         switch (repeatType) {
-            case DAILY -> {
-                return lastRepeat.plusDays(1);
-            }
             case IN_DAYS -> {
                 return lastRepeat.plusDays(arg);
             }
             case WEEKLY -> {
-                return lastRepeat.plusWeeks(1);
+                return lastRepeat.plusWeeks(arg);
             }
             case MONTHLY -> {
-                return lastRepeat.plusMonths(1);
+                return lastRepeat.plusMonths(arg);
             }
         }
 
@@ -27,10 +24,7 @@ public class NextRepeatTools {
     }
 
     public static boolean validateArg(RepeatType type, short arg) {
-        if (type == RepeatType.IN_DAYS)
-            return arg > 0 && arg < 512;
-
-        return true;
+        return arg > 0 && arg < 512;
     }
 
     public static boolean validateArg(short type, short arg) {
