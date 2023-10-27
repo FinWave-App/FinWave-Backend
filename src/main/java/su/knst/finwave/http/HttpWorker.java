@@ -139,7 +139,7 @@ public class HttpWorker {
                     get("/getList", recurringTransactionApi::getList);
                     post("/new", recurringTransactionApi::newRecurringTransaction);
                     post("/edit", recurringTransactionApi::editRecurringTransaction);
-                    post("/delete", recurringTransactionApi::deleteTransaction);
+                    post("/delete", recurringTransactionApi::deleteRecurringTransaction);
                 });
 
                 get("/getList", transactionApi::getTransactions);

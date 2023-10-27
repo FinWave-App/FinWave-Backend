@@ -17,6 +17,7 @@ import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.RecurringTransactionsRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.service.recurring.NextRepeatTools;
+import su.knst.finwave.utils.params.InvalidParameterException;
 import su.knst.finwave.utils.params.ParamsValidator;
 
 import java.math.BigDecimal;
@@ -124,6 +125,9 @@ public class RecurringTransactionApi {
                 .string(request, "nextRepeat")
                 .map(OffsetDateTime::parse);
 
+        if (nextRepeat.isBefore(OffsetDateTime.now()))
+            throw new InvalidParameterException("nextRepeat");
+
         RepeatType repeatType = ParamsValidator
                 .integer(request, "repeatType")
                 .range(0, RepeatType.values().length - 1)
@@ -165,7 +169,7 @@ public class RecurringTransactionApi {
         return ApiMessage.of("Recurring transaction edited");
     }
 
-    public Object deleteTransaction(Request request, Response response) {
+    public Object deleteRecurringTransaction(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         long recurringId = ParamsValidator
@@ -177,7 +181,7 @@ public class RecurringTransactionApi {
 
         response.status(200);
 
-        return ApiMessage.of("Transaction deleted");
+        return ApiMessage.of("Recurring deleted");
     }
 
     public Object getList(Request request, Response response) {

@@ -24,7 +24,7 @@ public class NextRepeatTools {
     }
 
     public static boolean validateArg(RepeatType type, short arg) {
-        return arg > 0 && arg < 512;
+        return arg > 0 && arg <= 512;
     }
 
     public static boolean validateArg(short type, short arg) {
