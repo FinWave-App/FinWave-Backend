@@ -69,7 +69,6 @@ public class RecurringTransactionDatabase extends AbstractDatabase {
                 .set(RECURRING_TRANSACTIONS.REPEAT_FUNC, (short)repeatType.ordinal())
                 .set(RECURRING_TRANSACTIONS.REPEAT_FUNC_ARG, repeatArg)
                 .set(RECURRING_TRANSACTIONS.NOTIFICATION_MODE, (short)notificationMode.ordinal())
-                .set(RECURRING_TRANSACTIONS.LAST_REPEAT, OffsetDateTime.MIN)
                 .set(RECURRING_TRANSACTIONS.NEXT_REPEAT, nextRepeat)
                 .set(RECURRING_TRANSACTIONS.DELTA, delta)
                 .set(RECURRING_TRANSACTIONS.DESCRIPTION, description)

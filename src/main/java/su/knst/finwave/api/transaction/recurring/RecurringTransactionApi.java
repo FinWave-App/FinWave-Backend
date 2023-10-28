@@ -62,6 +62,9 @@ public class RecurringTransactionApi {
                 .string(request, "nextRepeat")
                 .map(OffsetDateTime::parse);
 
+        if (nextRepeat.isBefore(OffsetDateTime.now()))
+            throw new InvalidParameterException("nextRepeat");
+
         RepeatType repeatType = ParamsValidator
                 .integer(request, "repeatType")
                 .range(0, RepeatType.values().length - 1)
