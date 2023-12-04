@@ -25,7 +25,6 @@ public class UserApi {
     protected static final Logger log = LoggerFactory.getLogger(UserApi.class);
 
     protected UserDatabase database;
-    protected UserSettingsDatabase userSettingsDatabase;
     protected SessionDatabase sessionDatabase;
 
     protected UserConfig config;
@@ -33,7 +32,6 @@ public class UserApi {
     @Inject
     public UserApi(DatabaseWorker databaseWorker, Configs configs) {
         this.database = databaseWorker.get(UserDatabase.class);
-        this.userSettingsDatabase = databaseWorker.get(UserSettingsDatabase.class);
         this.sessionDatabase = databaseWorker.get(SessionDatabase.class);
 
         this.config = configs.getState(new UserConfig());
@@ -53,14 +51,6 @@ public class UserApi {
                 .matches(config.registration.passwordRegexFilter)
                 .require();
 
-        String lang = ParamsValidator.string(request, "lang")
-                .length(2, 16) // 16 - database limit, check base migration file
-                .require();
-
-        ZoneId timezone = ParamsValidator
-                .string(request, "timezone")
-                .map(ZoneId::of);
-
         if (database.userExists(login))
             halt(409);
 
@@ -68,8 +58,6 @@ public class UserApi {
 
         if (userId.isEmpty())
             halt(500);
-
-        userSettingsDatabase.initUserSettings(userId.get(), lang, timezone.getId());
 
         response.status(201);
 

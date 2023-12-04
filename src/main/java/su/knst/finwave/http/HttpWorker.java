@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.api.account.AccountApi;
 import su.knst.finwave.api.account.tag.AccountTagApi;
+import su.knst.finwave.api.admin.AdminApi;
 import su.knst.finwave.api.analytics.AnalyticsApi;
 import su.knst.finwave.api.auth.AuthApi;
 import su.knst.finwave.api.auth.AuthenticationFailException;
@@ -40,6 +41,7 @@ public class HttpWorker {
     protected RecurringTransactionApi recurringTransactionApi;
     protected AnalyticsApi analyticsApi;
     protected SessionApi sessionApi;
+    protected AdminApi adminApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -54,7 +56,8 @@ public class HttpWorker {
                       TransactionApi transactionApi,
                       TransactionTagApi transactionTagApi,
                       RecurringTransactionApi recurringTransactionApi,
-                      AnalyticsApi analyticsApi) {
+                      AnalyticsApi analyticsApi,
+                      AdminApi adminApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -69,12 +72,26 @@ public class HttpWorker {
         this.transactionTagApi = transactionTagApi;
         this.analyticsApi = analyticsApi;
         this.recurringTransactionApi = recurringTransactionApi;
+        this.adminApi = adminApi;
 
         setup();
         patches();
     }
 
     protected void patches() {
+        path("/admin", () -> {
+            before("/*", authApi::authAdmin);
+
+            get("/check", (request, response) -> true);
+            get("/getUsers", adminApi::getUsers);
+            get("/getActiveUsersCount", adminApi::getActiveUsersCount);
+            get("/getUsersCount", adminApi::getUsersCount);
+            get("/getTransactionsCount", adminApi::getTransactionsCount);
+
+            post("/registerUser", adminApi::registerUser);
+            post("/changeUserPassword", adminApi::changeUserPassword);
+        });
+
         path("/user", () -> {
             before("/*", authApi::auth);
 

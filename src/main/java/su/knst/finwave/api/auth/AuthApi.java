@@ -63,6 +63,18 @@ public class AuthApi {
         request.attribute("session", sessionsRecord.get());
     }
 
+    public void authAdmin(Request request, Response response) throws AuthenticationFailException {
+        if (request.requestMethod().equals("OPTIONS"))
+            return;
+
+        auth(request, response);
+
+        UsersSessionsRecord record = request.attribute("session");
+
+        if (record == null || record.getUserId() != 1)
+            throw new AuthenticationFailException();
+    }
+
     public Object login(Request request, Response response) {
         String login = ParamsValidator
                 .string(request, "login")
