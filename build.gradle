@@ -31,6 +31,8 @@ configurations.implementation.setCanBeResolved(true)
 dependencies {
     implementation 'org.reflections:reflections:0.10.2'
 
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.76'
+
     implementation 'org.flywaydb:flyway-core:9.22.0'
 
     implementation 'org.jooq:jooq:3.18.3'
@@ -49,6 +51,8 @@ dependencies {
     implementation 'su.knst.scw:scw:0.3.1' // Config Worker
 
     implementation 'com.sparkjava:spark-core:2.9.4'
+
+    implementation 'nl.martijndwars:web-push:5.1.1'
 
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
 

@@ -1,0 +1,105 @@
+package su.knst.finwave.api.notification;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.jooq.DSLContext;
+import org.jooq.Record1;
+import su.knst.finwave.api.notification.data.Notification;
+import su.knst.finwave.api.notification.data.NotificationOptions;
+import su.knst.finwave.api.notification.data.point.AbstractNotificationPointData;
+import su.knst.finwave.api.notification.data.point.NotificationPointType;
+import su.knst.finwave.database.AbstractDatabase;
+import su.knst.finwave.jooq.tables.records.NotificationsPointsRecord;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import static su.knst.finwave.jooq.Tables.*;
+
+public class NotificationDatabase extends AbstractDatabase {
+    public static final Gson GSON = new GsonBuilder().create();
+
+    public NotificationDatabase(DSLContext context) {
+        super(context);
+    }
+
+    public void pushNotification(int userId, String message, NotificationOptions options) {
+        context.insertInto(NOTIFICATIONS_PULL)
+                .set(NOTIFICATIONS_PULL.TEXT, message)
+                .set(NOTIFICATIONS_PULL.OPTIONS, GSON.toJson(options))
+                .set(NOTIFICATIONS_PULL.USER_ID, userId)
+                .set(NOTIFICATIONS_PULL.CREATED_AT, OffsetDateTime.now())
+                .execute();
+    }
+
+    public List<Notification> pullNotifications(int count) {
+        return context.deleteFrom(NOTIFICATIONS_PULL)
+                .limit(count)
+                .returningResult(NOTIFICATIONS_PULL.fields())
+                .fetch().map((r) -> new Notification(
+                        r.get(NOTIFICATIONS_PULL.ID),
+                        r.get(NOTIFICATIONS_PULL.TEXT),
+                        GSON.fromJson(r.get(NOTIFICATIONS_PULL.OPTIONS), NotificationOptions.class),
+                        r.get( NOTIFICATIONS_PULL.USER_ID),
+                        r.get(NOTIFICATIONS_PULL.CREATED_AT)
+                ));
+    }
+
+    public List<NotificationsPointsRecord> getUserNotificationsPoints(int userId) {
+        return context.selectFrom(NOTIFICATIONS_POINTS)
+                .where(NOTIFICATIONS_POINTS.USER_ID.eq(userId))
+                .orderBy(NOTIFICATIONS_POINTS.IS_PRIMARY.desc(), NOTIFICATIONS_POINTS.CREATED_AT.desc())
+                .fetch();
+    }
+
+    public Optional<Long> registerNotificationPoint(int userId, boolean isPrimary, AbstractNotificationPointData data, String description) {
+        return context.insertInto(NOTIFICATIONS_POINTS)
+                .set(NOTIFICATIONS_POINTS.IS_PRIMARY, isPrimary)
+                .set(NOTIFICATIONS_POINTS.USER_ID, userId)
+                .set(NOTIFICATIONS_POINTS.TYPE, (short) data.type.ordinal())
+                .set(NOTIFICATIONS_POINTS.CREATED_AT, OffsetDateTime.now())
+                .set(NOTIFICATIONS_POINTS.DATA, GSON.toJson(data))
+                .set(NOTIFICATIONS_POINTS.DESCRIPTION, description)
+                .returningResult(NOTIFICATIONS_POINTS.ID)
+                .fetchOptional()
+                .map(Record1::component1);
+    }
+
+    public int getPointsCount(int userId) {
+        return context.selectCount()
+                .from(NOTIFICATIONS_POINTS)
+                .where(NOTIFICATIONS_POINTS.USER_ID.eq(userId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElse(0);
+    }
+
+    public void editNotificationPointPrimary(long pointId, boolean isPrimary) {
+        context.update(NOTIFICATIONS_POINTS)
+                .set(NOTIFICATIONS_POINTS.IS_PRIMARY, isPrimary)
+                .where(NOTIFICATIONS_POINTS.ID.eq(pointId))
+                .execute();
+    }
+
+    public void editNotificationPointDescription(long pointId, String description) {
+        context.update(NOTIFICATIONS_POINTS)
+                .set(NOTIFICATIONS_POINTS.DESCRIPTION, description)
+                .where(NOTIFICATIONS_POINTS.ID.eq(pointId))
+                .execute();
+    }
+
+    public void deleteNotificationPoint(long pointId) {
+        context.deleteFrom(NOTIFICATIONS_POINTS)
+                .where(NOTIFICATIONS_POINTS.ID.eq(pointId))
+                .execute();
+    }
+
+    public boolean userOwnPoint(int userId, long pointId) {
+        return context.select(NOTIFICATIONS_POINTS.ID)
+                .from(NOTIFICATIONS_POINTS)
+                .where(NOTIFICATIONS_POINTS.USER_ID.eq(userId).and(NOTIFICATIONS_POINTS.ID.eq(pointId)))
+                .fetchOptional()
+                .isPresent();
+    }
+}

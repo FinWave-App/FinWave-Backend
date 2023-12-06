@@ -13,6 +13,7 @@ import su.knst.finwave.api.auth.AuthenticationFailException;
 import su.knst.finwave.api.config.ConfigApi;
 import su.knst.finwave.api.currency.CurrencyApi;
 import su.knst.finwave.api.note.NoteApi;
+import su.knst.finwave.api.notification.NotificationApi;
 import su.knst.finwave.api.session.SessionApi;
 import su.knst.finwave.api.transaction.TransactionApi;
 import su.knst.finwave.api.transaction.recurring.RecurringTransactionApi;
@@ -42,6 +43,7 @@ public class HttpWorker {
     protected AnalyticsApi analyticsApi;
     protected SessionApi sessionApi;
     protected AdminApi adminApi;
+    protected NotificationApi notificationApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -57,7 +59,8 @@ public class HttpWorker {
                       TransactionTagApi transactionTagApi,
                       RecurringTransactionApi recurringTransactionApi,
                       AnalyticsApi analyticsApi,
-                      AdminApi adminApi) {
+                      AdminApi adminApi,
+                      NotificationApi notificationApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -73,6 +76,7 @@ public class HttpWorker {
         this.analyticsApi = analyticsApi;
         this.recurringTransactionApi = recurringTransactionApi;
         this.adminApi = adminApi;
+        this.notificationApi = notificationApi;
 
         setup();
         patches();
@@ -170,6 +174,18 @@ public class HttpWorker {
             path("/analytics", () -> {
                 get("/getByMonths", analyticsApi::getAnalyticsByMonths);
                 get("/getByDays", analyticsApi::getAnalyticsByDays);
+            });
+
+            path("/notifications", () -> {
+                path("/points", () -> {
+                    get("/getList", notificationApi::getPoints);
+                    post("/newWebPush", notificationApi::registerNewWebPushPoint);
+                    post("/editDescription", notificationApi::editPointDescription);
+                    post("/editPrimary", notificationApi::editPointPrimary);
+                    post("/delete", notificationApi::deletePoint);
+                });
+
+                post("/push", notificationApi::pushNotification);
             });
         });
 

@@ -8,6 +8,7 @@ import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.TransactionConfig;
 import su.knst.finwave.config.general.ServiceConfig;
 import su.knst.finwave.http.HttpWorker;
+import su.knst.finwave.service.notifications.NotificationsService;
 import su.knst.finwave.service.recurring.RecurringService;
 
 import java.util.concurrent.Executors;
@@ -21,12 +22,13 @@ public class ServicesManager {
     protected static final Logger log = LoggerFactory.getLogger(ServicesManager.class);
 
     @Inject
-    public ServicesManager(Configs configs, RecurringService recurringService) {
+    public ServicesManager(Configs configs, RecurringService recurringService, NotificationsService notificationsService) {
         this.config = configs.getState(new ServiceConfig());
 
         this.scheduledExecutorService = Executors.newScheduledThreadPool(config.threadPoolThreads);
 
         initService(recurringService);
+        initService(notificationsService);
     }
 
     public void initService(AbstractService service) {
