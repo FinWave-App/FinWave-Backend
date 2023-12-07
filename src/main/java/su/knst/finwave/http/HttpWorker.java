@@ -179,6 +179,7 @@ public class HttpWorker {
             path("/notifications", () -> {
                 path("/points", () -> {
                     get("/getList", notificationApi::getPoints);
+                    get("/vapidKey", notificationApi::getKey);
                     post("/newWebPush", notificationApi::registerNewWebPushPoint);
                     post("/editDescription", notificationApi::editPointDescription);
                     post("/editPrimary", notificationApi::editPointPrimary);

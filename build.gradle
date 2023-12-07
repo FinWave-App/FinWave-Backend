@@ -7,7 +7,7 @@ plugins {
 
 group 'su.knst.finwave'
 
-version = '0.5.0'
+version = '0.6.0'
 mainClassName = group + ".Main"
 archivesBaseName = 'FinWave'
 
@@ -94,11 +94,6 @@ jooq {
                         name = 'org.jooq.meta.postgres.PostgresDatabase'
                         inputSchema = 'public'
                         forcedTypes {
-                            forcedType {
-                                name = 'varchar'
-                                includeExpression = '.*'
-                                includeTypes = 'JSONB?'
-                            }
                             forcedType {
                                 name = 'varchar'
                                 includeExpression = '.*'

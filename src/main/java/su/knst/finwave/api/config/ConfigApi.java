@@ -39,5 +39,5 @@ public class ConfigApi {
         return hash;
     }
 
-    record PublicConfigs(UserConfig users, AccountsConfig accounts, CurrencyConfig currencies, NotesConfig notes, TransactionConfig transactions, AnalyticsConfig analytics, NotificationsConfig notificationsConfig) { }
+    record PublicConfigs(UserConfig users, AccountsConfig accounts, CurrencyConfig currencies, NotesConfig notes, TransactionConfig transactions, AnalyticsConfig analytics, NotificationsConfig notifications) { }
 }

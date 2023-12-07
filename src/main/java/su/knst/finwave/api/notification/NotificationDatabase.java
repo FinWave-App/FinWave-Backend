@@ -3,6 +3,7 @@ package su.knst.finwave.api.notification;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jooq.DSLContext;
+import org.jooq.JSONB;
 import org.jooq.Record1;
 import su.knst.finwave.api.notification.data.Notification;
 import su.knst.finwave.api.notification.data.NotificationOptions;
@@ -15,6 +16,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.jooq.impl.DSL.val;
 import static su.knst.finwave.jooq.Tables.*;
 
 public class NotificationDatabase extends AbstractDatabase {
@@ -27,7 +29,7 @@ public class NotificationDatabase extends AbstractDatabase {
     public void pushNotification(int userId, String message, NotificationOptions options) {
         context.insertInto(NOTIFICATIONS_PULL)
                 .set(NOTIFICATIONS_PULL.TEXT, message)
-                .set(NOTIFICATIONS_PULL.OPTIONS, GSON.toJson(options))
+                .set(NOTIFICATIONS_PULL.OPTIONS, JSONB.valueOf(GSON.toJson(options)))
                 .set(NOTIFICATIONS_PULL.USER_ID, userId)
                 .set(NOTIFICATIONS_PULL.CREATED_AT, OffsetDateTime.now())
                 .execute();
@@ -40,7 +42,7 @@ public class NotificationDatabase extends AbstractDatabase {
                 .fetch().map((r) -> new Notification(
                         r.get(NOTIFICATIONS_PULL.ID),
                         r.get(NOTIFICATIONS_PULL.TEXT),
-                        GSON.fromJson(r.get(NOTIFICATIONS_PULL.OPTIONS), NotificationOptions.class),
+                        GSON.fromJson(r.get(NOTIFICATIONS_PULL.OPTIONS).data(), NotificationOptions.class),
                         r.get( NOTIFICATIONS_PULL.USER_ID),
                         r.get(NOTIFICATIONS_PULL.CREATED_AT)
                 ));
@@ -59,7 +61,7 @@ public class NotificationDatabase extends AbstractDatabase {
                 .set(NOTIFICATIONS_POINTS.USER_ID, userId)
                 .set(NOTIFICATIONS_POINTS.TYPE, (short) data.type.ordinal())
                 .set(NOTIFICATIONS_POINTS.CREATED_AT, OffsetDateTime.now())
-                .set(NOTIFICATIONS_POINTS.DATA, GSON.toJson(data))
+                .set(NOTIFICATIONS_POINTS.DATA, JSONB.valueOf(GSON.toJson(data)))
                 .set(NOTIFICATIONS_POINTS.DESCRIPTION, description)
                 .returningResult(NOTIFICATIONS_POINTS.ID)
                 .fetchOptional()
