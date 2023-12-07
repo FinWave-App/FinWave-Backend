@@ -171,10 +171,10 @@ public class NotificationApi {
     }
 
     static class GetPointsResponse extends ApiResponse {
-        public final List<Entry> sessions;
+        public final List<Entry> points;
 
         public GetPointsResponse(List<NotificationsPointsRecord> sessions) {
-            this.sessions = sessions.stream()
+            this.points = sessions.stream()
                     .map(r -> new Entry(
                             r.getId(),
                             r.getIsPrimary(),
