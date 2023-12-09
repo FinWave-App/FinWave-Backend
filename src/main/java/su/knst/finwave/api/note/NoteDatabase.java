@@ -13,6 +13,7 @@ import java.util.Optional;
 import static org.jooq.impl.DSL.currentOffsetDateTime;
 import static org.jooq.impl.DSL.when;
 import static su.knst.finwave.jooq.Tables.NOTES;
+import static su.knst.finwave.jooq.Tables.RECURRING_TRANSACTIONS;
 
 
 public class NoteDatabase extends AbstractDatabase {
@@ -34,6 +35,13 @@ public class NoteDatabase extends AbstractDatabase {
 
     public Optional<Long> newNote(int userId, String note) {
         return newNote(userId, null, note);
+    }
+
+    public List<NotesRecord> getToRemind(int count) {
+        return context.selectFrom(NOTES)
+                .where(NOTES.NOTIFICATION_TIME.lessOrEqual(OffsetDateTime.now()))
+                .limit(count)
+                .fetch();
     }
 
     public int getNotesCount(int userId) {

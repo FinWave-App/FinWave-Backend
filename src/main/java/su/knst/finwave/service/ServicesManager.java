@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.ServiceConfig;
+import su.knst.finwave.service.notes.NotesService;
 import su.knst.finwave.service.notifications.NotificationsService;
 import su.knst.finwave.service.recurring.RecurringService;
 
@@ -20,13 +21,14 @@ public class ServicesManager {
     protected static final Logger log = LoggerFactory.getLogger(ServicesManager.class);
 
     @Inject
-    public ServicesManager(Configs configs, RecurringService recurringService, NotificationsService notificationsService) {
+    public ServicesManager(Configs configs, RecurringService recurringService, NotificationsService notificationsService, NotesService notesService) {
         this.config = configs.getState(new ServiceConfig());
 
         this.scheduledExecutorService = Executors.newScheduledThreadPool(config.threadPoolThreads);
 
         initService(recurringService);
         initService(notificationsService);
+        initService(notesService);
     }
 
     public void initService(AbstractService service) {
