@@ -1,11 +1,7 @@
 package su.knst.finwave.api.account.tag;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.*;
-import org.jooq.impl.DSL;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.AccountsTagsRecord;
 
 import java.util.List;

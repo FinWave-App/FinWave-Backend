@@ -2,7 +2,6 @@ package su.knst.finwave.service.recurring;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import su.knst.finwave.api.notification.NotificationDatabase;
 import su.knst.finwave.api.notification.data.Notification;
 import su.knst.finwave.api.notification.data.NotificationOptions;
 import su.knst.finwave.api.notification.manager.NotificationManager;
@@ -36,7 +35,7 @@ public class RecurringService extends AbstractService {
         List<RecurringTransactionsRecord> records = database.getRecurringForProcessing();
 
         for (RecurringTransactionsRecord record : records) {
-            long newTransaction = transactionsManager.applyRecurringTransaction(new TransactionNewRecord(
+            transactionsManager.applyRecurringTransaction(new TransactionNewRecord(
                     record.getOwnerId(),
                     record.getTagId(),
                     record.getAccountId(),

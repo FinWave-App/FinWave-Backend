@@ -15,8 +15,6 @@ import su.knst.finwave.utils.params.InvalidParameterException;
 
 import java.time.OffsetDateTime;
 
-import static spark.Spark.halt;
-
 @Singleton
 public class AnalyticsApi {
     protected AnalyticsDatabase database;

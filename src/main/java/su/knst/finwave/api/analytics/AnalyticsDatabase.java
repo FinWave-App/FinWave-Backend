@@ -1,7 +1,5 @@
 package su.knst.finwave.api.analytics;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import su.knst.finwave.api.analytics.result.AnalyticsByDays;
@@ -9,7 +7,6 @@ import su.knst.finwave.api.analytics.result.AnalyticsByMonths;
 import su.knst.finwave.api.transaction.TransactionDatabase;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.database.DatabaseWorker;
 
 import static org.jooq.impl.DSL.*;
 import static su.knst.finwave.jooq.Tables.TRANSACTIONS;

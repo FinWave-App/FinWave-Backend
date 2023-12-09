@@ -15,7 +15,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.jooq.impl.DSL.val;
 import static su.knst.finwave.jooq.Tables.*;
 
 public class NotificationDatabase extends AbstractDatabase {

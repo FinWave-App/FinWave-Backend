@@ -1,11 +1,8 @@
 package su.knst.finwave.api.transaction.recurring;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.RecurringTransactionsRecord;
 
 import java.math.BigDecimal;
@@ -14,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static su.knst.finwave.jooq.Tables.*;
-import static su.knst.finwave.jooq.Tables.TRANSACTIONS;
 
 
 public class RecurringTransactionDatabase extends AbstractDatabase {

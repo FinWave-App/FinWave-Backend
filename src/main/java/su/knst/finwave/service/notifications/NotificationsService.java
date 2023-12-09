@@ -3,13 +3,11 @@ package su.knst.finwave.service.notifications;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import su.knst.finwave.api.notification.NotificationDatabase;
-import su.knst.finwave.api.notification.NotificationPusher;
 import su.knst.finwave.api.notification.data.Notification;
 import su.knst.finwave.api.notification.manager.NotificationManager;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.ServiceConfig;
 import su.knst.finwave.database.DatabaseWorker;
-import su.knst.finwave.jooq.tables.records.NotificationsPointsRecord;
 import su.knst.finwave.service.AbstractService;
 
 import java.util.List;

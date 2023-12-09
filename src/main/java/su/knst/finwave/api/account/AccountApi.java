@@ -6,7 +6,6 @@ import spark.Request;
 import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.account.tag.AccountTagDatabase;
-import su.knst.finwave.api.currency.CurrencyApi;
 import su.knst.finwave.api.currency.CurrencyDatabase;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.AccountsConfig;
@@ -16,7 +15,6 @@ import su.knst.finwave.jooq.tables.records.AccountsRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.ParamsValidator;
 
-import javax.xml.crypto.Data;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;

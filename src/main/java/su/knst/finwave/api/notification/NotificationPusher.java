@@ -3,10 +3,7 @@ package su.knst.finwave.api.notification;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import nl.martijndwars.webpush.PushAsyncService;
-import nl.martijndwars.webpush.PushService;
-import nl.martijndwars.webpush.Subscription;
 import org.asynchttpclient.Response;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jose4j.lang.JoseException;
 import su.knst.finwave.api.notification.data.Notification;
 import su.knst.finwave.api.notification.data.point.NotificationPointType;
@@ -19,9 +16,7 @@ import su.knst.finwave.utils.VapidGenerator;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
-import java.security.Security;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static su.knst.finwave.api.ApiResponse.GSON;
 

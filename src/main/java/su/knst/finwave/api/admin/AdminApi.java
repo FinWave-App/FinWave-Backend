@@ -5,15 +5,11 @@ import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import su.knst.finwave.api.ApiResponse;
-import su.knst.finwave.api.account.AccountApi;
 import su.knst.finwave.api.session.SessionDatabase;
 import su.knst.finwave.api.user.UserDatabase;
 import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
-import su.knst.finwave.jooq.tables.UsersSessions;
-import su.knst.finwave.jooq.tables.records.AccountsRecord;
 import su.knst.finwave.jooq.tables.records.UsersRecord;
-import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.ParamsValidator;
 
 import java.util.List;

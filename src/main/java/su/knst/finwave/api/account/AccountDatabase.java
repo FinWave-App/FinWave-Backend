@@ -1,11 +1,8 @@
 package su.knst.finwave.api.account;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.AccountsRecord;
 
 import java.math.BigDecimal;

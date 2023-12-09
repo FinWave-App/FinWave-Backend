@@ -2,14 +2,11 @@ package su.knst.finwave.api.transaction.manager.actions;
 
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.Record1;
-import su.knst.finwave.api.transaction.TransactionDatabase;
 import su.knst.finwave.api.transaction.manager.generator.InternalTransferMetadata;
 import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
 import su.knst.finwave.api.transaction.metadata.MetadataDatabase;
-import su.knst.finwave.api.transaction.metadata.MetadataType;
 import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
 import su.knst.finwave.jooq.tables.records.TransactionsRecord;

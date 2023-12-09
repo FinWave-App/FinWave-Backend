@@ -1,10 +1,7 @@
 package su.knst.finwave.api.auth;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.UsersRecord;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.PBKDF2;

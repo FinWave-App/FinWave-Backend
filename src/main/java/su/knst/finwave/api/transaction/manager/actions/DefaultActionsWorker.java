@@ -1,6 +1,5 @@
 package su.knst.finwave.api.transaction.manager.actions;
 
-import org.checkerframework.checker.units.qual.A;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;

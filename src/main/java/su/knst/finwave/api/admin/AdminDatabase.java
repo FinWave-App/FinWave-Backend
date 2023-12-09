@@ -2,7 +2,6 @@ package su.knst.finwave.api.admin;
 
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import org.jooq.Record4;
 import org.jooq.impl.DSL;
 import su.knst.finwave.database.AbstractDatabase;
 import su.knst.finwave.jooq.tables.records.UsersRecord;

@@ -5,9 +5,7 @@ import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.config.Configs;
-import su.knst.finwave.config.app.TransactionConfig;
 import su.knst.finwave.config.general.ServiceConfig;
-import su.knst.finwave.http.HttpWorker;
 import su.knst.finwave.service.notifications.NotificationsService;
 import su.knst.finwave.service.recurring.RecurringService;
 

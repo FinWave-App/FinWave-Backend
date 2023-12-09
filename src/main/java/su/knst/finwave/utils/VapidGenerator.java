@@ -1,7 +1,6 @@
 package su.knst.finwave.utils;
 
 import com.google.common.io.BaseEncoding;
-import nl.martijndwars.webpush.Base64Encoder;
 import nl.martijndwars.webpush.Utils;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -18,7 +17,6 @@ import org.bouncycastle.util.BigIntegers;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 
 public class VapidGenerator {
 

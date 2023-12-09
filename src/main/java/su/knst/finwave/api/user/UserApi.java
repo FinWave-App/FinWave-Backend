@@ -2,8 +2,6 @@ package su.knst.finwave.api.user;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
 import su.knst.finwave.api.ApiResponse;
@@ -15,15 +13,12 @@ import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
 import su.knst.finwave.utils.params.ParamsValidator;
 
-import java.time.ZoneId;
 import java.util.Optional;
 
 import static spark.Spark.halt;
 
 @Singleton
 public class UserApi {
-    protected static final Logger log = LoggerFactory.getLogger(UserApi.class);
-
     protected UserDatabase database;
     protected SessionDatabase sessionDatabase;
 

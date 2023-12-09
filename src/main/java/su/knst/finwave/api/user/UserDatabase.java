@@ -1,11 +1,8 @@
 package su.knst.finwave.api.user;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.utils.PBKDF2;
 
 import java.security.NoSuchAlgorithmException;

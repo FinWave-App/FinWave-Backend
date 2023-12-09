@@ -5,7 +5,6 @@ import com.google.inject.Singleton;
 import su.knst.finwave.api.notification.NotificationDatabase;
 import su.knst.finwave.api.notification.NotificationPusher;
 import su.knst.finwave.api.notification.data.Notification;
-import su.knst.finwave.api.notification.data.NotificationOptions;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.ServiceConfig;
 import su.knst.finwave.database.DatabaseWorker;
@@ -13,7 +12,6 @@ import su.knst.finwave.jooq.tables.records.NotificationsPointsRecord;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;

@@ -1,12 +1,9 @@
 package su.knst.finwave.api.transaction.tag;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.postgres.extensions.types.Ltree;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.TransactionsTagsRecord;
 
 import java.util.List;
