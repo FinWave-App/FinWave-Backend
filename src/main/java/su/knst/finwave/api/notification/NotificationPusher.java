@@ -1,9 +1,11 @@
-package su.knst.finwave.service.notifications;
+package su.knst.finwave.api.notification;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import nl.martijndwars.webpush.PushAsyncService;
 import nl.martijndwars.webpush.PushService;
 import nl.martijndwars.webpush.Subscription;
+import org.asynchttpclient.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jose4j.lang.JoseException;
 import su.knst.finwave.api.notification.data.Notification;
@@ -18,51 +20,54 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.Security;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static su.knst.finwave.api.ApiResponse.GSON;
 
 @Singleton
 public class NotificationPusher {
-    protected PushService pushService;
+    protected PushAsyncService pushService;
 
     @Inject
     public NotificationPusher(Configs configs) throws GeneralSecurityException {
         VapidKeysConfig config = configs.getState(new VapidKeysConfig());
 
-        this.pushService = new PushService(new KeyPair(
+        this.pushService = new PushAsyncService(new KeyPair(
                 VapidGenerator.stringToPublicKey(config.publicKey),
                 VapidGenerator.stringToPrivateKey(config.privateKey)
         ));
     }
 
-    public boolean push(NotificationsPointsRecord pointRecord, Notification notification) {
+    public CompletableFuture<Boolean> push(NotificationsPointsRecord pointRecord, Notification notification) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+
         switch (NotificationPointType.values()[(int)pointRecord.getType()]){
             case WEB_PUSH -> {
-                return pushWeb(pointRecord, notification);
+                pushWeb(pointRecord, notification).whenComplete((r, t) -> {
+                    result.complete(t == null);
+                });
             }
-            default -> {
-                return false;
-            }
+            default -> result.complete(false);
         }
+
+        return result;
     }
 
-    protected boolean pushWeb(NotificationsPointsRecord pointRecord, Notification notification) {
+    protected CompletableFuture<Response> pushWeb(NotificationsPointsRecord pointRecord, Notification notification) {
         WebPushPointData data = GSON.fromJson(pointRecord.getData().data(), WebPushPointData.class);
 
         try {
-            pushService.send(new nl.martijndwars.webpush.Notification(
+            return pushService.send(new nl.martijndwars.webpush.Notification(
                     data.endpoint,
                     data.p256dh,
                     data.auth,
                     GSON.toJson(notification)
             ));
-        } catch (GeneralSecurityException | IOException | JoseException | ExecutionException | InterruptedException e) {
+        } catch (GeneralSecurityException | IOException | JoseException e) {
             e.printStackTrace();
 
-            return false;
+            return CompletableFuture.failedFuture(e);
         }
-
-        return true;
     }
 }

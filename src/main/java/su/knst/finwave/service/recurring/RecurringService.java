@@ -3,7 +3,9 @@ package su.knst.finwave.service.recurring;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import su.knst.finwave.api.notification.NotificationDatabase;
+import su.knst.finwave.api.notification.data.Notification;
 import su.knst.finwave.api.notification.data.NotificationOptions;
+import su.knst.finwave.api.notification.manager.NotificationManager;
 import su.knst.finwave.api.transaction.manager.TransactionsManager;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
 import su.knst.finwave.api.transaction.recurring.NotificationMode;
@@ -19,13 +21,13 @@ import java.util.concurrent.TimeUnit;
 public class RecurringService extends AbstractService {
 
     protected RecurringTransactionDatabase database;
-    protected NotificationDatabase notificationDatabase;
+    protected NotificationManager notificationManager;
     protected TransactionsManager transactionsManager;
 
     @Inject
-    public RecurringService(DatabaseWorker databaseWorker, TransactionsManager transactionsManager) {
+    public RecurringService(DatabaseWorker databaseWorker, TransactionsManager transactionsManager, NotificationManager notificationManager) {
         this.database = databaseWorker.get(RecurringTransactionDatabase.class);
-        this.notificationDatabase = databaseWorker.get(NotificationDatabase.class);
+        this.notificationManager = notificationManager;
         this.transactionsManager = transactionsManager;
     }
 
@@ -56,7 +58,11 @@ public class RecurringService extends AbstractService {
                 message = "Some recurring is completed";
 
             if (mode != NotificationMode.WITHOUT)
-                notificationDatabase.pushNotification(record.getOwnerId(), message, new NotificationOptions(mode == NotificationMode.SILENT, -1, null));
+                notificationManager.push(Notification.create(
+                        message,
+                        new NotificationOptions(mode == NotificationMode.SILENT, -1, null),
+                        record.getOwnerId()
+                ));
         }
     }
 

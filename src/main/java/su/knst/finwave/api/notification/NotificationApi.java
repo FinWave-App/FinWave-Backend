@@ -6,8 +6,10 @@ import org.jose4j.base64url.Base64Url;
 import spark.Request;
 import spark.Response;
 import su.knst.finwave.api.ApiResponse;
+import su.knst.finwave.api.notification.data.Notification;
 import su.knst.finwave.api.notification.data.NotificationOptions;
 import su.knst.finwave.api.notification.data.point.WebPushPointData;
+import su.knst.finwave.api.notification.manager.NotificationManager;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.app.NotificationsConfig;
 import su.knst.finwave.config.general.VapidKeysConfig;
@@ -27,12 +29,14 @@ import static spark.Spark.halt;
 @Singleton
 public class NotificationApi {
     protected NotificationDatabase database;
+    protected NotificationManager manager;
     protected NotificationsConfig config;
     protected String vapidPublicKey;
 
     @Inject
-    public NotificationApi(DatabaseWorker databaseWorker, Configs configs) {
+    public NotificationApi(DatabaseWorker databaseWorker, NotificationManager manager, Configs configs) {
         this.database = databaseWorker.get(NotificationDatabase.class);
+        this.manager = manager;
         this.config = configs.getState(new NotificationsConfig());
         this.vapidPublicKey = configs.getState(new VapidKeysConfig()).publicKey;
     }
@@ -171,7 +175,11 @@ public class NotificationApi {
         args.put("icon", "/icon.png");
         args.put("silent", String.valueOf(silent));
 
-        database.pushNotification(sessionsRecord.getUserId(), text, new NotificationOptions(silent, pointId, args));
+        manager.push(Notification.create(
+                text,
+                new NotificationOptions(silent, pointId, args),
+                sessionsRecord.getUserId()
+        ));
 
         response.status(200);
 

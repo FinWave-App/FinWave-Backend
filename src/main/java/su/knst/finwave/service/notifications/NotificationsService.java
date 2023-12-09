@@ -2,59 +2,44 @@ package su.knst.finwave.service.notifications;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.jooq.DSLContext;
 import su.knst.finwave.api.notification.NotificationDatabase;
+import su.knst.finwave.api.notification.NotificationPusher;
 import su.knst.finwave.api.notification.data.Notification;
-import su.knst.finwave.api.transaction.manager.TransactionsManager;
-import su.knst.finwave.api.transaction.recurring.RecurringTransactionDatabase;
+import su.knst.finwave.api.notification.manager.NotificationManager;
+import su.knst.finwave.config.Configs;
+import su.knst.finwave.config.general.ServiceConfig;
 import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.jooq.tables.records.NotificationsPointsRecord;
 import su.knst.finwave.service.AbstractService;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class NotificationsService extends AbstractService {
+    protected NotificationManager manager;
     protected NotificationDatabase database;
-    protected NotificationPusher pusher;
+    protected ServiceConfig.NotificationServiceConfig config;
 
     @Inject
-    public NotificationsService(DatabaseWorker databaseWorker, NotificationPusher pusher) {
+    public NotificationsService(NotificationManager manager, DatabaseWorker databaseWorker, Configs configs) {
+        this.manager = manager;
         this.database = databaseWorker.get(NotificationDatabase.class);
-        this.pusher = pusher;
+        this.config = configs.getState(new ServiceConfig()).notifications;
     }
 
     @Override
     public void run() {
-        List<Notification> notifications = database.pullNotifications(100);
+        List<Notification> notifications = database.pullNotifications(config.notificationsPerSecond);
 
         for (Notification notification : notifications) {
-            long targetPointId = notification.options().pointId();
-            List<NotificationsPointsRecord> records = database.getUserNotificationsPoints(notification.userId());
-
-            if (targetPointId != -1)
-                records = records.stream().filter((r) -> r.getId() == targetPointId).toList();
-
-            if (records.size() == 0)
-                continue;
-
-            boolean pushed = false;
-
-            for (NotificationsPointsRecord record : records) {
-                if (!record.getIsPrimary() && pushed)
-                    break;
-
-                pushed = pusher.push(record, notification);
-            }
+            manager.pushImmediately(notification);
         }
     }
 
     @Override
     public long getRepeatTime() {
-        return 5;
+        return 1;
     }
 
     @Override

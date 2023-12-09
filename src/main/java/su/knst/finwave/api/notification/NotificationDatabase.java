@@ -8,7 +8,6 @@ import org.jooq.Record1;
 import su.knst.finwave.api.notification.data.Notification;
 import su.knst.finwave.api.notification.data.NotificationOptions;
 import su.knst.finwave.api.notification.data.point.AbstractNotificationPointData;
-import su.knst.finwave.api.notification.data.point.NotificationPointType;
 import su.knst.finwave.database.AbstractDatabase;
 import su.knst.finwave.jooq.tables.records.NotificationsPointsRecord;
 
@@ -26,17 +25,18 @@ public class NotificationDatabase extends AbstractDatabase {
         super(context);
     }
 
-    public void pushNotification(int userId, String message, NotificationOptions options) {
+    public void saveNotification(Notification notification) {
         context.insertInto(NOTIFICATIONS_PULL)
-                .set(NOTIFICATIONS_PULL.TEXT, message)
-                .set(NOTIFICATIONS_PULL.OPTIONS, JSONB.valueOf(GSON.toJson(options)))
-                .set(NOTIFICATIONS_PULL.USER_ID, userId)
-                .set(NOTIFICATIONS_PULL.CREATED_AT, OffsetDateTime.now())
+                .set(NOTIFICATIONS_PULL.TEXT, notification.text())
+                .set(NOTIFICATIONS_PULL.OPTIONS, JSONB.valueOf(GSON.toJson(notification.options())))
+                .set(NOTIFICATIONS_PULL.USER_ID, notification.userId())
+                .set(NOTIFICATIONS_PULL.CREATED_AT, notification.createdAt())
                 .execute();
     }
 
     public List<Notification> pullNotifications(int count) {
         return context.deleteFrom(NOTIFICATIONS_PULL)
+                .orderBy(NOTIFICATIONS_PULL.CREATED_AT.asc())
                 .limit(count)
                 .returningResult(NOTIFICATIONS_PULL.fields())
                 .fetch().map((r) -> new Notification(
