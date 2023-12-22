@@ -3,7 +3,7 @@ package su.knst.finwave.api.transaction.metadata;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import su.knst.finwave.database.AbstractDatabase;
-import su.knst.finwave.jooq.tables.records.InternalTransfersRecord;
+import su.knst.finwave.jooq.tables.records.InternalTransactionsMetadataRecord;
 
 import java.util.Optional;
 
@@ -30,11 +30,11 @@ public class MetadataDatabase extends AbstractDatabase {
                 .execute();
     }
 
-    public long createInternalTransferMetadata(long fromTransactionId, long toTransactionId) {
-        long internalId = context.insertInto(INTERNAL_TRANSFERS)
-                .set(INTERNAL_TRANSFERS.FROM_TRANSACTION_ID, fromTransactionId)
-                .set(INTERNAL_TRANSFERS.TO_TRANSACTION_ID, toTransactionId)
-                .returningResult(INTERNAL_TRANSFERS.ID)
+    public long createInternalMetadata(long fromTransactionId, long toTransactionId) {
+        long internalId = context.insertInto(INTERNAL_TRANSACTIONS_METADATA)
+                .set(INTERNAL_TRANSACTIONS_METADATA.FROM_TRANSACTION_ID, fromTransactionId)
+                .set(INTERNAL_TRANSACTIONS_METADATA.TO_TRANSACTION_ID, toTransactionId)
+                .returningResult(INTERNAL_TRANSACTIONS_METADATA.ID)
                 .fetchOptional()
                 .map(Record1::component1)
                 .orElseThrow();
@@ -42,9 +42,9 @@ public class MetadataDatabase extends AbstractDatabase {
         return createMetadata(MetadataType.INTERNAL_TRANSFER, internalId);
     }
 
-    public Optional<InternalTransfersRecord> getInternalTransferMeta(long id) {
-        return context.selectFrom(INTERNAL_TRANSFERS)
-                .where(INTERNAL_TRANSFERS.ID.eq(id))
+    public Optional<InternalTransactionsMetadataRecord> getInternalMetadata(long id) {
+        return context.selectFrom(INTERNAL_TRANSACTIONS_METADATA)
+                .where(INTERNAL_TRANSACTIONS_METADATA.ID.eq(id))
                 .fetchOptional();
     }
 }

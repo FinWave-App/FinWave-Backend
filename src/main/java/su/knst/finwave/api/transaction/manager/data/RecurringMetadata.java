@@ -1,4 +1,4 @@
-package su.knst.finwave.api.transaction.manager.generator;
+package su.knst.finwave.api.transaction.manager.data;
 
 import su.knst.finwave.api.transaction.metadata.MetadataType;
 

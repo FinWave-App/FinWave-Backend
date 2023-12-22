@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.api.account.AccountApi;
 import su.knst.finwave.api.account.tag.AccountTagApi;
+import su.knst.finwave.api.accumulation.AccumulationApi;
 import su.knst.finwave.api.admin.AdminApi;
 import su.knst.finwave.api.analytics.AnalyticsApi;
 import su.knst.finwave.api.auth.AuthApi;
@@ -44,6 +45,7 @@ public class HttpWorker {
     protected SessionApi sessionApi;
     protected AdminApi adminApi;
     protected NotificationApi notificationApi;
+    protected AccumulationApi accumulationApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -60,7 +62,8 @@ public class HttpWorker {
                       RecurringTransactionApi recurringTransactionApi,
                       AnalyticsApi analyticsApi,
                       AdminApi adminApi,
-                      NotificationApi notificationApi) {
+                      NotificationApi notificationApi,
+                      AccumulationApi accumulationApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -77,6 +80,7 @@ public class HttpWorker {
         this.recurringTransactionApi = recurringTransactionApi;
         this.adminApi = adminApi;
         this.notificationApi = notificationApi;
+        this.accumulationApi = accumulationApi;
 
         setup();
         patches();
@@ -144,6 +148,12 @@ public class HttpWorker {
                 post("/editTag", accountApi::editAccountTag);
                 post("/hide", accountApi::hideAccount);
                 post("/show", accountApi::showAccount);
+            });
+
+            path("/accumulations", () -> {
+                get("/getList", accumulationApi::getList);
+                post("/set", accumulationApi::setAccumulation);
+                post("/remove", accumulationApi::removeAccumulation);
             });
 
             path("/transactions", () -> {

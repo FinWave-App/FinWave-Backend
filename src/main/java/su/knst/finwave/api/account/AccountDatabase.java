@@ -63,6 +63,18 @@ public class AccountDatabase extends AbstractDatabase {
                 .isPresent();
     }
 
+    public boolean sameCurrencies(long id, long id2) {
+        List<Long> results = context.select(ACCOUNTS.CURRENCY_ID)
+                .from(ACCOUNTS)
+                .where(ACCOUNTS.ID.eq(id).or(ACCOUNTS.ID.eq(id2)))
+                .fetch().map(Record1::component1);
+
+        if (results.size() != 2)
+            return false;
+
+        return results.get(0).equals(results.get(1));
+    }
+
     public List<AccountsRecord> getAccounts(int userId) {
         return context.selectFrom(ACCOUNTS)
                 .where(ACCOUNTS.OWNER_ID.eq(userId))

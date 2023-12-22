@@ -2,9 +2,9 @@ package su.knst.finwave.api.transaction.manager.actions;
 
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import su.knst.finwave.api.transaction.manager.generator.AbstractMetadata;
-import su.knst.finwave.api.transaction.manager.generator.RecurringMetadata;
-import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
+import su.knst.finwave.api.transaction.manager.data.AbstractMetadata;
+import su.knst.finwave.api.transaction.manager.data.RecurringMetadata;
+import su.knst.finwave.api.transaction.manager.data.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
 import su.knst.finwave.api.transaction.metadata.MetadataDatabase;
 import su.knst.finwave.api.transaction.metadata.MetadataType;

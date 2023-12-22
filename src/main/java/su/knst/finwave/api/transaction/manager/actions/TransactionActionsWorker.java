@@ -2,14 +2,19 @@ package su.knst.finwave.api.transaction.manager.actions;
 
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import su.knst.finwave.api.transaction.manager.generator.AbstractMetadata;
-import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
+import su.knst.finwave.api.transaction.manager.data.AbstractMetadata;
+import su.knst.finwave.api.transaction.manager.data.TransactionEntry;
+import su.knst.finwave.api.transaction.hook.TransactionActionsHook;
 import su.knst.finwave.database.DatabaseWorker;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 public abstract class TransactionActionsWorker<T, Y, Z extends AbstractMetadata> {
     protected DatabaseWorker databaseWorker;
+    protected ArrayList<TransactionActionsHook<T, Y>> hooks = new ArrayList<>();
 
     public TransactionActionsWorker(DatabaseWorker databaseWorker) {
         this.databaseWorker = databaseWorker;
@@ -19,4 +24,16 @@ public abstract class TransactionActionsWorker<T, Y, Z extends AbstractMetadata>
     public abstract void edit(DSLContext context, Record record, Y editRecord);
     public abstract void cancel(DSLContext context, Record record);
     public abstract TransactionEntry<Z> prepareEntry(DSLContext context, Record record, HashMap<Long, TransactionEntry<?>> added);
+
+    public void addHook(TransactionActionsHook<T, Y> hook) {
+        hooks.add(hook);
+    }
+
+    public void removeHook(TransactionActionsHook<T, Y> hook) {
+        hooks.remove(hook);
+    }
+
+    public List<TransactionActionsHook<T, Y>> getHooks() {
+        return Collections.unmodifiableList(hooks);
+    }
 }

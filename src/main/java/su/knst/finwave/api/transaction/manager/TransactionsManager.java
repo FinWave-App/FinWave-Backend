@@ -6,11 +6,12 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import su.knst.finwave.api.transaction.TransactionDatabase;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
-import su.knst.finwave.api.transaction.manager.actions.RecurringActionsWorker;
-import su.knst.finwave.api.transaction.manager.actions.TransactionActionsWorker;
-import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
-import su.knst.finwave.api.transaction.manager.actions.DefaultActionsWorker;
-import su.knst.finwave.api.transaction.manager.actions.InternalActionsWorker;
+import su.knst.finwave.api.transaction.hook.TransactionActionsHook;
+import su.knst.finwave.api.transaction.hook.accumulation.AccumulationHook;
+import su.knst.finwave.api.transaction.hook.accumulation.DefaultHook;
+import su.knst.finwave.api.transaction.hook.accumulation.InternalHook;
+import su.knst.finwave.api.transaction.manager.actions.*;
+import su.knst.finwave.api.transaction.manager.data.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
@@ -33,9 +34,9 @@ public class TransactionsManager {
     protected DefaultActionsWorker defaultActionsWorker;
     protected InternalActionsWorker internalActionsWorker;
     protected RecurringActionsWorker recurringActionsWorker;
+    protected AccumulationActionsWorker accumulationActionsWorker;
 
     protected HashMap<MetadataType, TransactionActionsWorker<?,?,?>> actionsWorkers = new HashMap<>();
-
 
     @Inject
     public TransactionsManager(DatabaseWorker databaseWorker) {
@@ -46,30 +47,88 @@ public class TransactionsManager {
         this.defaultActionsWorker = new DefaultActionsWorker(databaseWorker);
         this.internalActionsWorker = new InternalActionsWorker(defaultActionsWorker, databaseWorker);
         this.recurringActionsWorker = new RecurringActionsWorker(databaseWorker);
+        this.accumulationActionsWorker = new AccumulationActionsWorker(databaseWorker);
 
         actionsWorkers.put(MetadataType.WITHOUT_METADATA, defaultActionsWorker);
         actionsWorkers.put(MetadataType.INTERNAL_TRANSFER, internalActionsWorker);
         actionsWorkers.put(MetadataType.RECURRING, recurringActionsWorker);
+        actionsWorkers.put(MetadataType.HAS_ACCUMULATION, accumulationActionsWorker);
+
+        this.defaultActionsWorker.addHook(new DefaultHook(this, databaseWorker));
+        this.accumulationActionsWorker.addHook(new AccumulationHook(this, databaseWorker));
+        this.internalActionsWorker.addHook(new InternalHook(this, databaseWorker));
     }
 
-    public long applyInternalTransfer(TransactionNewInternalRecord internalRecord) {
-        return context.transactionResult((configuration) -> internalActionsWorker.apply(configuration.dsl(), internalRecord));
+    public long applyInternalTransfer(TransactionNewInternalRecord newRecord) {
+        return context.transactionResult((configuration) -> {
+            DSLContext dsl = configuration.dsl();
+            var hooks = internalActionsWorker.getHooks();
+
+            hooks.forEach((h) -> h.apply(dsl, newRecord));
+            long id = internalActionsWorker.apply(dsl, newRecord);
+            hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+
+            return id;
+        });
     }
 
     public long applyTransaction(TransactionNewRecord newRecord) {
-        return context.transactionResult((configuration) -> defaultActionsWorker.apply(configuration.dsl(), newRecord));
+        return context.transactionResult((configuration) -> {
+            DSLContext dsl = configuration.dsl();
+            var hooks = defaultActionsWorker.getHooks();
+
+            hooks.forEach((h) -> h.apply(dsl, newRecord));
+            long id = defaultActionsWorker.apply(dsl, newRecord);
+            hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+
+            return id;
+        });
     }
 
     public long applyRecurringTransaction(TransactionNewRecord newRecord) {
-        return context.transactionResult((configuration) -> recurringActionsWorker.apply(configuration.dsl(), newRecord));
+        return context.transactionResult((configuration) -> {
+            DSLContext dsl = configuration.dsl();
+            var hooks = recurringActionsWorker.getHooks();
+
+            hooks.forEach((h) -> h.apply(dsl, newRecord));
+            long id = recurringActionsWorker.apply(configuration.dsl(), newRecord);
+            hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+
+            return id;
+        });
     }
 
     public void editTransaction(long transactionId, TransactionEditRecord editRecord) {
         runTransactionOverRecord(transactionId, (context, record, type) -> {
             switch (type) {
-                case WITHOUT_METADATA -> defaultActionsWorker.edit(context, record, editRecord);
-                case INTERNAL_TRANSFER -> internalActionsWorker.edit(context, record, editRecord);
-                case RECURRING -> recurringActionsWorker.edit(context, record, editRecord);
+                case WITHOUT_METADATA -> {
+                    var hooks = defaultActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.edit(context, record, editRecord, transactionId));
+                    defaultActionsWorker.edit(context, record, editRecord);
+                    hooks.forEach((h) -> h.edited(context, record, editRecord, transactionId));
+                }
+                case INTERNAL_TRANSFER  -> {
+                    var hooks = internalActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.edit(context, record, editRecord, transactionId));
+                    internalActionsWorker.edit(context, record, editRecord);
+                    hooks.forEach((h) -> h.edited(context, record, editRecord, transactionId));
+                }
+                case RECURRING -> {
+                    var hooks = recurringActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.edit(context, record, editRecord, transactionId));
+                    recurringActionsWorker.edit(context, record, editRecord);
+                    hooks.forEach((h) -> h.edited(context, record, editRecord, transactionId));
+                }
+                case HAS_ACCUMULATION -> {
+                    var hooks = accumulationActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.edit(context, record, editRecord, transactionId));
+                    accumulationActionsWorker.edit(context, record, editRecord);
+                    hooks.forEach((h) -> h.edited(context, record, editRecord, transactionId));
+                }
             }
         });
     }
@@ -77,9 +136,34 @@ public class TransactionsManager {
     public void cancelTransaction(long transactionId) {
         runTransactionOverRecord(transactionId, (context, record, type) -> {
             switch (type) {
-                case WITHOUT_METADATA -> defaultActionsWorker.cancel(context, record);
-                case INTERNAL_TRANSFER -> internalActionsWorker.cancel(context, record);
-                case RECURRING -> recurringActionsWorker.cancel(context, record);
+                case WITHOUT_METADATA -> {
+                    var hooks = defaultActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.cancel(context, record, transactionId));
+                    defaultActionsWorker.cancel(context, record);
+                    hooks.forEach((h) -> h.canceled(context, record, transactionId));
+                }
+                case INTERNAL_TRANSFER -> {
+                    var hooks = internalActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.cancel(context, record, transactionId));
+                    internalActionsWorker.cancel(context, record);
+                    hooks.forEach((h) -> h.canceled(context, record, transactionId));
+                }
+                case RECURRING -> {
+                    var hooks = recurringActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.cancel(context, record, transactionId));
+                    recurringActionsWorker.cancel(context, record);
+                    hooks.forEach((h) -> h.canceled(context, record, transactionId));
+                }
+                case HAS_ACCUMULATION -> {
+                    var hooks = accumulationActionsWorker.getHooks();
+
+                    hooks.forEach((h) -> h.cancel(context, record, transactionId));
+                    accumulationActionsWorker.cancel(context, record);
+                    hooks.forEach((h) -> h.canceled(context, record, transactionId));
+                }
             }
         });
     }
@@ -90,6 +174,14 @@ public class TransactionsManager {
 
     public InternalActionsWorker getInternalActionsWorker() {
         return internalActionsWorker;
+    }
+
+    public RecurringActionsWorker getRecurringActionsWorker() {
+        return recurringActionsWorker;
+    }
+
+    public AccumulationActionsWorker getAccumulationActionsWorker() {
+        return accumulationActionsWorker;
     }
 
     public List<TransactionEntry<?>> getTransactions(int userId, int offset, int count, TransactionsFilter filter) {

@@ -7,7 +7,7 @@ plugins {
 
 group 'su.knst.finwave'
 
-version = '0.6.1'
+version = '0.7.0'
 mainClassName = group + ".Main"
 archivesBaseName = 'FinWave'
 

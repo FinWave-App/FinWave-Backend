@@ -3,7 +3,8 @@ package su.knst.finwave.api.transaction.metadata;
 public enum MetadataType {
     WITHOUT_METADATA(0),
     INTERNAL_TRANSFER(1),
-    RECURRING(2);
+    RECURRING(2),
+    HAS_ACCUMULATION(3);
 
     public final short type;
 

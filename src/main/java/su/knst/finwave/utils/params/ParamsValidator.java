@@ -1,9 +1,13 @@
 package su.knst.finwave.utils.params;
 
+import com.google.gson.JsonSyntaxException;
 import spark.Request;
+import su.knst.finwave.utils.params.validators.BodyValidator;
 import su.knst.finwave.utils.params.validators.IntValidator;
 import su.knst.finwave.utils.params.validators.LongValidator;
 import su.knst.finwave.utils.params.validators.StringValidator;
+
+import static su.knst.finwave.api.ApiResponse.GSON;
 
 public class ParamsValidator {
     public static StringValidator string(String raw, String name) {
@@ -56,5 +60,13 @@ public class ParamsValidator {
 
     public static LongValidator longV(Request request, String name) {
         return longV(request.queryParams(name), name);
+    }
+
+    public static <T> BodyValidator<T> bodyObject(Request request, Class<T> tClass) {
+        try {
+            return new BodyValidator<>(GSON.fromJson(request.body(), tClass));
+        }catch (JsonSyntaxException e) {
+            throw new InvalidParameterException("body");
+        }
     }
 }

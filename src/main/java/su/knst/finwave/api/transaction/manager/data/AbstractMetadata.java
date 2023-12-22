@@ -1,4 +1,4 @@
-package su.knst.finwave.api.transaction.manager.generator;
+package su.knst.finwave.api.transaction.manager.data;
 
 public abstract class AbstractMetadata {
     public final long type;

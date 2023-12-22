@@ -7,7 +7,7 @@ import spark.Response;
 import su.knst.finwave.api.ApiResponse;
 import su.knst.finwave.api.account.AccountDatabase;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
-import su.knst.finwave.api.transaction.manager.generator.TransactionEntry;
+import su.knst.finwave.api.transaction.manager.data.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.TransactionsManager;
 import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
