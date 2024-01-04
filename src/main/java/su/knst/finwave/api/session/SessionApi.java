@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static su.knst.finwave.utils.SessionGenerator.generateSessionToken;
+import static su.knst.finwave.utils.TokenGenerator.generateSessionToken;
 
 @Singleton
 public class SessionApi {

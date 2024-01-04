@@ -25,7 +25,8 @@ public class ConfigApi {
                 configs.getState(new TransactionConfig()),
                 configs.getState(new AnalyticsConfig()),
                 configs.getState(new NotificationsConfig()),
-                configs.getState(new AccumulationConfig())
+                configs.getState(new AccumulationConfig()),
+                configs.getState(new ReportConfig())
         );
 
         this.authConfigJson = ApiResponse.GSON.toJson(publicConfigs);
@@ -40,5 +41,13 @@ public class ConfigApi {
         return hash;
     }
 
-    record PublicConfigs(UserConfig users, AccountsConfig accounts, CurrencyConfig currencies, NotesConfig notes, TransactionConfig transactions, AnalyticsConfig analytics, NotificationsConfig notifications, AccumulationConfig accumulation) { }
+    record PublicConfigs(UserConfig users,
+                         AccountsConfig accounts,
+                         CurrencyConfig currencies,
+                         NotesConfig notes,
+                         TransactionConfig transactions,
+                         AnalyticsConfig analytics,
+                         NotificationsConfig notifications,
+                         AccumulationConfig accumulation,
+                         ReportConfig reports) { }
 }

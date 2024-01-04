@@ -81,8 +81,8 @@ public class TransactionDatabase extends AbstractDatabase {
         if (filter.getToTime() != null)
             condition = condition.and(TRANSACTIONS.CREATED_AT.lessOrEqual(filter.getToTime()));
 
-        if (filter.getDescriptionContains() != null)
-            condition = condition.and(TRANSACTIONS.DESCRIPTION.containsIgnoreCase(filter.getDescriptionContains()));
+        if (filter.getDescription() != null)
+            condition = condition.and(TRANSACTIONS.DESCRIPTION.containsIgnoreCase(filter.getDescription()));
 
         return condition;
     }

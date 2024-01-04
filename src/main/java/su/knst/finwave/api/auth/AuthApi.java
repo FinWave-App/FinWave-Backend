@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static spark.Spark.halt;
-import static su.knst.finwave.utils.SessionGenerator.generateSessionToken;
+import static su.knst.finwave.utils.TokenGenerator.generateSessionToken;
 
 @Singleton
 public class AuthApi {

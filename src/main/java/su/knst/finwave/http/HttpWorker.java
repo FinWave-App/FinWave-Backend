@@ -15,6 +15,7 @@ import su.knst.finwave.api.config.ConfigApi;
 import su.knst.finwave.api.currency.CurrencyApi;
 import su.knst.finwave.api.note.NoteApi;
 import su.knst.finwave.api.notification.NotificationApi;
+import su.knst.finwave.api.report.ReportApi;
 import su.knst.finwave.api.session.SessionApi;
 import su.knst.finwave.api.transaction.TransactionApi;
 import su.knst.finwave.api.transaction.recurring.RecurringTransactionApi;
@@ -46,6 +47,7 @@ public class HttpWorker {
     protected AdminApi adminApi;
     protected NotificationApi notificationApi;
     protected AccumulationApi accumulationApi;
+    protected ReportApi reportApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -63,7 +65,8 @@ public class HttpWorker {
                       AnalyticsApi analyticsApi,
                       AdminApi adminApi,
                       NotificationApi notificationApi,
-                      AccumulationApi accumulationApi) {
+                      AccumulationApi accumulationApi,
+                      ReportApi reportApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -81,6 +84,7 @@ public class HttpWorker {
         this.adminApi = adminApi;
         this.notificationApi = notificationApi;
         this.accumulationApi = accumulationApi;
+        this.reportApi = reportApi;
 
         setup();
         patches();
@@ -106,6 +110,11 @@ public class HttpWorker {
             get("/getUsername", userApi::getUsername);
             post("/changePassword", userApi::changePassword);
             post("/logout", userApi::logout);
+
+            path("/reports", () -> {
+                get("/getList", reportApi::getList);
+                post("/new", reportApi::newReport);
+            });
 
             path("/sessions", () -> {
                 get("/getList", sessionApi::getSessions);
@@ -208,6 +217,12 @@ public class HttpWorker {
         path("/configs", () -> {
             get("/get", configApi::getConfigs);
             get("/hash", configApi::hash);
+        });
+
+        path("/files", () -> {
+            path("/reports", () -> {
+                get("/get", reportApi::downloadReport);
+            });
         });
     }
 

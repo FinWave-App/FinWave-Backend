@@ -15,11 +15,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static su.knst.finwave.api.ApiResponse.GSON;
 import static su.knst.finwave.jooq.Tables.*;
 
 public class NotificationDatabase extends AbstractDatabase {
-    public static final Gson GSON = new GsonBuilder().create();
-
     public NotificationDatabase(DSLContext context) {
         super(context);
     }

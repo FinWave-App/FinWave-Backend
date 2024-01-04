@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import static su.knst.finwave.api.notification.NotificationDatabase.GSON;
+import static su.knst.finwave.api.ApiResponse.GSON;
 
 public record AccumulationData(long sourceAccountId, long targetAccountId, long tagId, int ownerId, ArrayList<AccumulationStep> steps) {
     public static AccumulationData fromRecord(AccumulationSettingsRecord record) {

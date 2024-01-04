@@ -3,10 +3,9 @@ package su.knst.finwave.config.app;
 import su.knst.finwave.config.ConfigGroup;
 import su.knst.finwave.config.GroupedConfig;
 
-public class AnalyticsConfig implements GroupedConfig {
-
-    public int maxTimeRangeDaysForMonths = 366;
-    public int maxTimeRangeDaysForDays = 120;
+public class ReportConfig implements GroupedConfig {
+    public int maxDescriptionLength = 128;
+    public int expiresDays = 14;
 
     @Override
     public ConfigGroup group() {

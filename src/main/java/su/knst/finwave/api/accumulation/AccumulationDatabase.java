@@ -8,7 +8,7 @@ import su.knst.finwave.database.AbstractDatabase;
 import java.util.List;
 import java.util.Optional;
 
-import static su.knst.finwave.api.notification.NotificationDatabase.GSON;
+import static su.knst.finwave.api.ApiResponse.GSON;
 import static su.knst.finwave.jooq.Tables.ACCUMULATION_SETTINGS;
 
 public class AccumulationDatabase extends AbstractDatabase {

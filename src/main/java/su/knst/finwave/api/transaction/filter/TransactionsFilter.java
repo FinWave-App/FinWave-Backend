@@ -15,21 +15,21 @@ public class TransactionsFilter {
     protected List<Long> currenciesIds;
     protected OffsetDateTime fromTime;
     protected OffsetDateTime toTime;
-    protected String descriptionContains;
+    protected String description;
 
     protected TransactionsFilter() {
     }
 
-    public TransactionsFilter(List<Long> tagsIds, List<Long> accountIds, List<Long> currenciesIds, OffsetDateTime fromTime, OffsetDateTime toTime, String descriptionContains) {
+    public TransactionsFilter(List<Long> tagsIds, List<Long> accountIds, List<Long> currenciesIds, OffsetDateTime fromTime, OffsetDateTime toTime, String description) {
         this.tagsIds = tagsIds;
         this.accountIds = accountIds;
         this.currenciesIds = currenciesIds;
         this.fromTime = fromTime;
         this.toTime = toTime;
-        this.descriptionContains = descriptionContains;
+        this.description = description;
     }
 
-    public TransactionsFilter(String tagsIdRaw, String accountIdsRaw, String currenciesIdsRaw, String fromTimeRaw, String toTimeRaw, String descriptionContains) {
+    public TransactionsFilter(String tagsIdRaw, String accountIdsRaw, String currenciesIdsRaw, String fromTimeRaw, String toTimeRaw, String description) {
         this.tagsIds = parseIds(tagsIdRaw);
         this.accountIds = parseIds(accountIdsRaw);
         this.currenciesIds = parseIds(currenciesIdsRaw);
@@ -40,7 +40,7 @@ public class TransactionsFilter {
         if (toTimeRaw != null)
             toTime = OffsetDateTime.parse(toTimeRaw);
 
-        this.descriptionContains = descriptionContains;
+        this.description = description;
     }
 
     public TransactionsFilter(Request request) {
@@ -91,8 +91,8 @@ public class TransactionsFilter {
         return toTime;
     }
 
-    public String getDescriptionContains() {
-        return descriptionContains;
+    public String getDescription() {
+        return description;
     }
 
     public void setTagsIds(List<Long> tagsIds) {
@@ -115,7 +115,7 @@ public class TransactionsFilter {
         this.toTime = toTime;
     }
 
-    public void setDescriptionContains(String descriptionContains) {
-        this.descriptionContains = descriptionContains;
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
