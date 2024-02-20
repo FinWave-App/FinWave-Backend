@@ -7,10 +7,14 @@ public class BodyValidator<T> extends AbstractValidator<T> {
         super(raw, null);
     }
 
-    public BodyValidator<T> matches(Function<T, Boolean> validator) {
+    public BodyValidator<T> matches(Function<T, Boolean> validator, String name) {
         if (raw != null && !validator.apply(raw))
-            invalid();
+            invalid(name);
 
         return this;
+    }
+
+    public BodyValidator<T> matches(Function<T, Boolean> validator) {
+        return matches(validator, name);
     }
 }

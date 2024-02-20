@@ -15,6 +15,10 @@ public abstract class AbstractValidator<T> {
     }
 
     protected void invalid() {
+        invalid(name);
+    }
+
+    protected void invalid(String name) {
         throw name == null ? new InvalidParameterException() : new InvalidParameterException(name);
     }
 

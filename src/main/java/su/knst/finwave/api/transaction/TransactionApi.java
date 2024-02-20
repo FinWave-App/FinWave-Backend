@@ -9,6 +9,7 @@ import su.knst.finwave.api.account.AccountDatabase;
 import su.knst.finwave.api.transaction.filter.TransactionsFilter;
 import su.knst.finwave.api.transaction.manager.data.TransactionEntry;
 import su.knst.finwave.api.transaction.manager.TransactionsManager;
+import su.knst.finwave.api.transaction.manager.records.BulkTransactionsRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
@@ -39,6 +40,46 @@ public class TransactionApi {
         this.manager = manager;
         this.tagDatabase = databaseWorker.get(TransactionTagDatabase.class);
         this.accountDatabase = databaseWorker.get(AccountDatabase.class);
+    }
+
+    public Object newBulkTransactions(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        BulkTransactionsRecord args = ParamsValidator.bodyObject(request, BulkTransactionsRecord.class)
+                .matches((r) -> !r.entries().isEmpty())
+                .require();
+
+        args.entries().forEach((entry) -> {
+            var validator = ParamsValidator.bodyObject(entry)
+                    .matches((e) -> e.type == 0 || e.type == 1, "type")
+                    .matches((e) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), e.tagId), "tagId")
+                    .matches((e) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), e.accountId), "accountId")
+                    .matches((e) -> e.created != null, "created")
+                    .matches((e) -> e.delta != null, "delta")
+                    .matches((e) -> e.description == null || !e.description.isBlank() && e.description.length() <= config.maxDescriptionLength, "description");
+
+            validator.require();
+
+            if (entry.type == 0)
+                return;
+
+            validator
+                    .matches((e) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), e.toAccountId), "toAccountId")
+                    .matches((e) -> e.toDelta != null, "toDelta")
+                    .require();
+
+            if (entry.delta.signum() >= 0)
+                throw new InvalidParameterException("fromDelta cannot be greater than or equal to zero");
+
+            if (entry.toDelta.signum() <= 0)
+                throw new InvalidParameterException("toDelta cannot be less than or equal to zero");
+        });
+
+        manager.applyBulkTransactions(args, sessionsRecord.getUserId());
+
+        response.status(201);
+
+        return ApiMessage.of("Successful");
     }
 
     public Object newInternalTransfer(Request request, Response response) {

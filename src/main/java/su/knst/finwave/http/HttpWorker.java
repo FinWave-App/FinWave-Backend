@@ -186,6 +186,7 @@ public class HttpWorker {
                 get("/getCount", transactionApi::getTransactionsCount);
                 post("/new", transactionApi::newTransaction);
                 post("/newInternal", transactionApi::newInternalTransfer);
+                post("/newBulk", transactionApi::newBulkTransactions);
                 post("/edit", transactionApi::editTransaction);
                 post("/delete", transactionApi::deleteTransaction);
             });

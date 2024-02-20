@@ -12,6 +12,7 @@ import su.knst.finwave.api.transaction.hook.accumulation.DefaultHook;
 import su.knst.finwave.api.transaction.hook.accumulation.InternalHook;
 import su.knst.finwave.api.transaction.manager.actions.*;
 import su.knst.finwave.api.transaction.manager.data.TransactionEntry;
+import su.knst.finwave.api.transaction.manager.records.BulkTransactionsRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionEditRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewInternalRecord;
 import su.knst.finwave.api.transaction.manager.records.TransactionNewRecord;
@@ -57,6 +58,30 @@ public class TransactionsManager {
         this.defaultActionsWorker.addHook(new DefaultHook(this, databaseWorker));
         this.accumulationActionsWorker.addHook(new AccumulationHook(this, databaseWorker));
         this.internalActionsWorker.addHook(new InternalHook(this, databaseWorker));
+    }
+
+    public void applyBulkTransactions(BulkTransactionsRecord record, int userId) {
+        List<?> records = record.toRecords(userId);
+
+        context.transaction((configuration) -> {
+            DSLContext dsl = configuration.dsl();
+            var hooksInternal = internalActionsWorker.getHooks();
+            var hooksDefault = defaultActionsWorker.getHooks();
+
+            for (Object rawRecord : records) {
+                if (rawRecord instanceof TransactionNewRecord newRecord) {
+                    hooksDefault.forEach((h) -> h.apply(dsl, newRecord));
+                    long id = defaultActionsWorker.apply(dsl, newRecord);
+                    hooksDefault.forEach((h) -> h.applied(dsl, newRecord, id));
+                }
+
+                if (rawRecord instanceof TransactionNewInternalRecord newRecord) {
+                    hooksInternal.forEach((h) -> h.apply(dsl, newRecord));
+                    long id = internalActionsWorker.apply(dsl, newRecord);
+                    hooksInternal.forEach((h) -> h.applied(dsl, newRecord, id));
+                }
+            }
+        });
     }
 
     public long applyInternalTransfer(TransactionNewInternalRecord newRecord) {

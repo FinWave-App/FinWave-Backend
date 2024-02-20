@@ -49,11 +49,11 @@ public class AccumulationApi {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         SetAccumulationArgs args = ParamsValidator.bodyObject(request, SetAccumulationArgs.class)
-                .matches((r) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), r.sourceAccountId))
-                .matches((r) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), r.targetAccountId))
-                .matches((r) -> accountDatabase.sameCurrencies(r.sourceAccountId, r.targetAccountId))
-                .matches((r) -> transactionTagDatabase.userOwnTag(sessionsRecord.getUserId(), r.tagId))
-                .matches((r) -> r.validateSteps(config.maxStepsPerAccount))
+                .matches((r) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), r.sourceAccountId), "sourceAccountId")
+                .matches((r) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), r.targetAccountId), "targetAccountId")
+                .matches((r) -> accountDatabase.sameCurrencies(r.sourceAccountId, r.targetAccountId), "sourceAccountId / targetAccountId")
+                .matches((r) -> transactionTagDatabase.userOwnTag(sessionsRecord.getUserId(), r.tagId), "tagId")
+                .matches((r) -> r.validateSteps(config.maxStepsPerAccount), "steps")
                 .require();
 
         database.setAccumulation(new AccumulationData(

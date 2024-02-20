@@ -64,7 +64,15 @@ public class ParamsValidator {
 
     public static <T> BodyValidator<T> bodyObject(Request request, Class<T> tClass) {
         try {
-            return new BodyValidator<>(GSON.fromJson(request.body(), tClass));
+            return bodyObject(GSON.fromJson(request.body(), tClass));
+        }catch (Exception e) {
+            throw new InvalidParameterException("body");
+        }
+    }
+
+    public static <T> BodyValidator<T> bodyObject(T object) {
+        try {
+            return new BodyValidator<>(object);
         }catch (JsonSyntaxException e) {
             throw new InvalidParameterException("body");
         }
