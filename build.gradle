@@ -22,7 +22,7 @@ repositories {
 
     // SCW
     maven {
-        url 'https://lab.knrg.su/api/v4/projects/28/packages/maven'
+        url 'https://lab.knst.su/api/v4/projects/28/packages/maven'
     }
 }
 
