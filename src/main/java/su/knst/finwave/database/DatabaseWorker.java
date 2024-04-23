@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.DatabaseConfig;
+import su.knst.finwave.migration.Migrator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -20,30 +21,19 @@ public class DatabaseWorker {
     protected static final Logger log = LoggerFactory.getLogger(DatabaseWorker.class);
     protected DatabaseConfig config;
 
-    protected Flyway flyway;
     protected Connection connection;
     protected DSLContext context;
 
     @Inject
-    public DatabaseWorker(Configs configs) {
+    public DatabaseWorker(Configs configs, Migrator migrator) {
         config = configs.getState(new DatabaseConfig());
 
         log.info("Init database...");
 
         System.setProperty("org.jooq.no-logo", "true");
 
-        flyway = Flyway.configure()
-                .dataSource(config.url, config.user, config.password)
-                .baselineVersion("1.0.0")
-                .validateMigrationNaming(true)
-                .sqlMigrationSuffixes(".sql")
-                .sqlMigrationPrefix("V")
-                .sqlMigrationSeparator("__")
-                .loggers("slf4j")
-                .load();
-
         try {
-            flyway.migrate();
+            migrator.migrate();
         } catch (Exception e) {
             log.error("Error to migrate", e);
 
@@ -54,6 +44,7 @@ public class DatabaseWorker {
 
         try {
             connection = DriverManager.getConnection(config.url, config.user, config.password);
+            connection.setAutoCommit(false);
 
             context = DSL.using(connection, SQLDialect.POSTGRES);
         } catch (Exception e) {

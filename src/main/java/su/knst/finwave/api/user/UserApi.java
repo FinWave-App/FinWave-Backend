@@ -11,6 +11,7 @@ import su.knst.finwave.config.general.UserConfig;
 import su.knst.finwave.database.DatabaseWorker;
 import su.knst.finwave.http.ApiMessage;
 import su.knst.finwave.jooq.tables.records.UsersSessionsRecord;
+import su.knst.finwave.utils.TokenGenerator;
 import su.knst.finwave.utils.params.ParamsValidator;
 
 import java.util.Optional;
@@ -30,6 +31,33 @@ public class UserApi {
         this.sessionDatabase = databaseWorker.get(SessionDatabase.class);
 
         this.config = configs.getState(new UserConfig());
+    }
+
+    public Object demoAccount(Request request, Response response) {
+        if (!config.demoMode)
+            halt(405);
+
+        String login;
+        int tries = 0;
+
+        do {
+            tries++;
+            login = TokenGenerator.generateDemoLogin();
+
+            if (tries > 5)
+                halt(500);
+        }while (database.userExists(login));
+
+        String password = TokenGenerator.generateDemoPassword();
+
+        Optional<Integer> userId = database.registerUser(login, password);
+
+        if (userId.isEmpty())
+            halt(500);
+
+        response.status(201);
+
+        return new DemoAccountResponse(login, password);
     }
 
     public Object register(Request request, Response response) {
@@ -100,6 +128,16 @@ public class UserApi {
 
         public GetUsernameResponse(String username) {
             this.username = username;
+        }
+    }
+
+    static class DemoAccountResponse extends ApiResponse {
+        public final String username;
+        public final String password;
+
+        public DemoAccountResponse(String username, String password) {
+            this.username = username;
+            this.password = password;
         }
     }
 }

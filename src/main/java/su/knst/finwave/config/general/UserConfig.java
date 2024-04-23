@@ -16,6 +16,8 @@ public class UserConfig implements GroupedConfig {
 
     public RegistrationConfig registration = new RegistrationConfig();
 
+    public boolean demoMode = false;
+
     @Override
     public ConfigGroup group() {
         return ConfigGroup.GENERAL;

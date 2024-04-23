@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.config.Configs;
 import su.knst.finwave.config.general.ServiceConfig;
+import su.knst.finwave.config.general.UserConfig;
+import su.knst.finwave.service.demo.DemoService;
 import su.knst.finwave.service.notes.NotesService;
 import su.knst.finwave.service.notifications.NotificationsService;
 import su.knst.finwave.service.recurring.RecurringService;
@@ -26,8 +28,11 @@ public class ServicesManager {
                            RecurringService recurringService,
                            NotificationsService notificationsService,
                            NotesService notesService,
-                           ReportsService reportsService) {
+                           ReportsService reportsService,
+                           DemoService demoService) {
         this.config = configs.getState(new ServiceConfig());
+
+        var userConfig = configs.getState(new UserConfig());
 
         this.scheduledExecutorService = Executors.newScheduledThreadPool(config.threadPoolThreads);
 
@@ -35,6 +40,12 @@ public class ServicesManager {
         initService(notificationsService);
         initService(notesService);
         initService(reportsService);
+
+        if (userConfig.demoMode) {
+            initService(demoService);
+
+            log.warn("THE SERVER IS IN DEMO MODE. ALL DATA WILL BE DELETED EVERY 24 HOURS");
+        }
     }
 
     public void initService(AbstractService service) {

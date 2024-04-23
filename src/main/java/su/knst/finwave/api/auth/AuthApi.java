@@ -96,6 +96,9 @@ public class AuthApi {
         if (sessionsRecord.isEmpty())
             halt(401);
 
+        if (config.demoMode && sessionsRecord.get().getId() == 1)
+            halt(401);
+
         String token = generateSessionToken();
 
         sessionDatabase.newSession(sessionsRecord.get().getId(), token, config.userSessionsLifetimeDays, description.orElse(null));

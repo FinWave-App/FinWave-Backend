@@ -2,10 +2,12 @@ package su.knst.finwave.migration;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import su.knst.finwave.api.currency.CurrencyDatabase;
 import su.knst.finwave.api.user.UserDatabase;
+import su.knst.finwave.config.Configs;
 import su.knst.finwave.database.DatabaseWorker;
 
 import java.util.Optional;

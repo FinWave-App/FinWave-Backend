@@ -213,6 +213,7 @@ public class HttpWorker {
         path("/auth", () -> {
             post("/login", authApi::login);
             post("/register", userApi::register);
+            post("/demo", userApi::demoAccount);
         });
 
         path("/configs", () -> {
