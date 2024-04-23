@@ -44,7 +44,6 @@ public class DatabaseWorker {
 
         try {
             connection = DriverManager.getConnection(config.url, config.user, config.password);
-            connection.setAutoCommit(false);
 
             context = DSL.using(connection, SQLDialect.POSTGRES);
         } catch (Exception e) {

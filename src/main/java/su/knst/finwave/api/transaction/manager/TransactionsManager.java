@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static su.knst.finwave.jooq.Tables.TRANSACTIONS_METADATA;
 
@@ -38,6 +39,8 @@ public class TransactionsManager {
     protected AccumulationActionsWorker accumulationActionsWorker;
 
     protected HashMap<MetadataType, TransactionActionsWorker<?,?,?>> actionsWorkers = new HashMap<>();
+
+    protected ReentrantLock transactionLock = new ReentrantLock();
 
     @Inject
     public TransactionsManager(DatabaseWorker databaseWorker) {
@@ -63,64 +66,88 @@ public class TransactionsManager {
     public void applyBulkTransactions(BulkTransactionsRecord record, int userId) {
         List<?> records = record.toRecords(userId);
 
-        context.transaction((configuration) -> {
-            DSLContext dsl = configuration.dsl();
-            var hooksInternal = internalActionsWorker.getHooks();
-            var hooksDefault = defaultActionsWorker.getHooks();
+        transactionLock.lock();
 
-            for (Object rawRecord : records) {
-                if (rawRecord instanceof TransactionNewRecord newRecord) {
-                    hooksDefault.forEach((h) -> h.apply(dsl, newRecord));
-                    long id = defaultActionsWorker.apply(dsl, newRecord);
-                    hooksDefault.forEach((h) -> h.applied(dsl, newRecord, id));
-                }
+        try {
+            context.transaction((configuration) -> {
+                DSLContext dsl = configuration.dsl();
+                var hooksInternal = internalActionsWorker.getHooks();
+                var hooksDefault = defaultActionsWorker.getHooks();
 
-                if (rawRecord instanceof TransactionNewInternalRecord newRecord) {
-                    hooksInternal.forEach((h) -> h.apply(dsl, newRecord));
-                    long id = internalActionsWorker.apply(dsl, newRecord);
-                    hooksInternal.forEach((h) -> h.applied(dsl, newRecord, id));
+                for (Object rawRecord : records) {
+                    if (rawRecord instanceof TransactionNewRecord newRecord) {
+                        hooksDefault.forEach((h) -> h.apply(dsl, newRecord));
+                        long id = defaultActionsWorker.apply(dsl, newRecord);
+                        hooksDefault.forEach((h) -> h.applied(dsl, newRecord, id));
+                    }
+
+                    if (rawRecord instanceof TransactionNewInternalRecord newRecord) {
+                        hooksInternal.forEach((h) -> h.apply(dsl, newRecord));
+                        long id = internalActionsWorker.apply(dsl, newRecord);
+                        hooksInternal.forEach((h) -> h.applied(dsl, newRecord, id));
+                    }
                 }
-            }
-        });
+            });
+        }finally {
+            transactionLock.unlock();
+        }
     }
 
     public long applyInternalTransfer(TransactionNewInternalRecord newRecord) {
-        return context.transactionResult((configuration) -> {
-            DSLContext dsl = configuration.dsl();
-            var hooks = internalActionsWorker.getHooks();
+        transactionLock.lock();
 
-            hooks.forEach((h) -> h.apply(dsl, newRecord));
-            long id = internalActionsWorker.apply(dsl, newRecord);
-            hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+        try {
+            return context.transactionResult((configuration) -> {
+                DSLContext dsl = configuration.dsl();
+                var hooks = internalActionsWorker.getHooks();
 
-            return id;
-        });
+                hooks.forEach((h) -> h.apply(dsl, newRecord));
+                long id = internalActionsWorker.apply(dsl, newRecord);
+                hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+
+                return id;
+            });
+        }finally {
+            transactionLock.unlock();
+        }
     }
 
     public long applyTransaction(TransactionNewRecord newRecord) {
-        return context.transactionResult((configuration) -> {
-            DSLContext dsl = configuration.dsl();
-            var hooks = defaultActionsWorker.getHooks();
+        transactionLock.lock();
 
-            hooks.forEach((h) -> h.apply(dsl, newRecord));
-            long id = defaultActionsWorker.apply(dsl, newRecord);
-            hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+        try {
+            return context.transactionResult((configuration) -> {
+                DSLContext dsl = configuration.dsl();
+                var hooks = defaultActionsWorker.getHooks();
 
-            return id;
-        });
+                hooks.forEach((h) -> h.apply(dsl, newRecord));
+                long id = defaultActionsWorker.apply(dsl, newRecord);
+                hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+
+                return id;
+            });
+        }finally {
+            transactionLock.unlock();
+        }
     }
 
     public long applyRecurringTransaction(TransactionNewRecord newRecord) {
-        return context.transactionResult((configuration) -> {
-            DSLContext dsl = configuration.dsl();
-            var hooks = recurringActionsWorker.getHooks();
+        transactionLock.lock();
 
-            hooks.forEach((h) -> h.apply(dsl, newRecord));
-            long id = recurringActionsWorker.apply(configuration.dsl(), newRecord);
-            hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+        try {
+            return context.transactionResult((configuration) -> {
+                DSLContext dsl = configuration.dsl();
+                var hooks = recurringActionsWorker.getHooks();
 
-            return id;
-        });
+                hooks.forEach((h) -> h.apply(dsl, newRecord));
+                long id = recurringActionsWorker.apply(configuration.dsl(), newRecord);
+                hooks.forEach((h) -> h.applied(dsl, newRecord, id));
+
+                return id;
+            });
+        }finally {
+            transactionLock.unlock();
+        }
     }
 
     public void editTransaction(long transactionId, TransactionEditRecord editRecord) {
@@ -240,20 +267,26 @@ public class TransactionsManager {
     }
 
     protected void runTransactionOverRecord(long transactionId, Transaction transaction) {
-        context.transaction((configuration) -> {
-            DSLContext dsl = configuration.dsl();
-            TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, dsl);
+        transactionLock.lock();
 
-            Record record = database
-                    .getTransaction(transactionId)
-                    .orElseThrow(() -> new RuntimeException("Transaction not exists"));
+        try {
+            context.transaction((configuration) -> {
+                DSLContext dsl = configuration.dsl();
+                TransactionDatabase database = databaseWorker.get(TransactionDatabase.class, dsl);
 
-            MetadataType metadataType = Optional.ofNullable(record.get(TRANSACTIONS_METADATA.TYPE))
-                    .map(MetadataType::get)
-                    .orElse(MetadataType.WITHOUT_METADATA);
+                Record record = database
+                        .getTransaction(transactionId)
+                        .orElseThrow(() -> new RuntimeException("Transaction not exists"));
 
-            transaction.run(dsl, record, metadataType);
-        });
+                MetadataType metadataType = Optional.ofNullable(record.get(TRANSACTIONS_METADATA.TYPE))
+                        .map(MetadataType::get)
+                        .orElse(MetadataType.WITHOUT_METADATA);
+
+                transaction.run(dsl, record, metadataType);
+            });
+        }finally {
+            transactionLock.unlock();
+        }
     }
 
     interface Transaction {
