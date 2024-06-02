@@ -15,7 +15,7 @@ public class SessionDatabase extends AbstractDatabase {
         super(context);
     }
 
-    public void newSession(int userId, String token, int lifetimeDays, String description) {
+    public void newSession(int userId, String token, int lifetimeDays, String description, boolean limited) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expires = now.plusDays(lifetimeDays);
 
@@ -25,6 +25,7 @@ public class SessionDatabase extends AbstractDatabase {
                 .set(USERS_SESSIONS.CREATED_AT, now)
                 .set(USERS_SESSIONS.EXPIRES_AT, expires)
                 .set(USERS_SESSIONS.DESCRIPTION, description)
+                .set(USERS_SESSIONS.LIMITED, limited)
                 .execute();
     }
 

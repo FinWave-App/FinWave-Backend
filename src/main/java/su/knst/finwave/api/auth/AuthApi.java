@@ -101,7 +101,7 @@ public class AuthApi {
 
         String token = generateSessionToken();
 
-        sessionDatabase.newSession(sessionsRecord.get().getId(), token, config.userSessionsLifetimeDays, description.orElse(null));
+        sessionDatabase.newSession(sessionsRecord.get().getId(), token, config.userSessionsLifetimeDays, description.orElse(null), false);
 
         return new LoginResponse(token, config.userSessionsLifetimeDays);
     }

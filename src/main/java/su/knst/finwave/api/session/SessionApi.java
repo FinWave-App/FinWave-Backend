@@ -32,6 +32,12 @@ public class SessionApi {
     public Object newSession(Request request, Response response) {
         UsersSessionsRecord sessionRecord = request.attribute("session");
 
+        if (sessionRecord.getLimited()) {
+            response.status(403);
+
+            return ApiMessage.of("This session is limited");
+        }
+
         int lifetimeDays = ParamsValidator
                 .integer(request, "lifetimeDays")
                 .range(1, Integer.MAX_VALUE)
@@ -44,7 +50,7 @@ public class SessionApi {
 
         String token = generateSessionToken();
 
-        database.newSession(sessionRecord.getUserId(), token, lifetimeDays, description.orElse(null));
+        database.newSession(sessionRecord.getUserId(), token, lifetimeDays, description.orElse(null), true);
 
         response.status(200);
 
@@ -63,6 +69,12 @@ public class SessionApi {
 
     public Object deleteSession(Request request, Response response) {
         UsersSessionsRecord sessionRecord = request.attribute("session");
+
+        if (sessionRecord.getLimited()) {
+            response.status(403);
+
+            return ApiMessage.of("This session is limited");
+        }
 
         long sessionId = ParamsValidator
                 .integer(request, "sessionId")

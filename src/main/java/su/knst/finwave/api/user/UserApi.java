@@ -90,6 +90,12 @@ public class UserApi {
     public Object changePassword(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
+        if (sessionsRecord.getLimited()) {
+            response.status(403);
+
+            return ApiMessage.of("This session is limited");
+        }
+
         String password = ParamsValidator.string(request, "password")
                 .length(config.minPasswordLength, config.maxPasswordLength)
                 .matches(config.registration.passwordRegexFilter)
