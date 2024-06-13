@@ -26,6 +26,7 @@ public class ConfigApi {
                 configs.getState(new AnalyticsConfig()),
                 configs.getState(new NotificationsConfig()),
                 configs.getState(new AccumulationConfig()),
+                configs.getState(new RecurringTransactionConfig()),
                 configs.getState(new ReportConfig())
         );
 
@@ -49,5 +50,6 @@ public class ConfigApi {
                          AnalyticsConfig analytics,
                          NotificationsConfig notifications,
                          AccumulationConfig accumulation,
+                         RecurringTransactionConfig recurring,
                          ReportConfig reports) { }
 }

@@ -129,7 +129,7 @@ public class CurrencyApi {
 
         response.status(200);
 
-        return ApiMessage.of("Currency description edited");
+        return ApiMessage.of("Currency decimals edited");
     }
 
     public Object editCurrencyDescription(Request request, Response response) {

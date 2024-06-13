@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class AnalyticsByDays extends ApiResponse {
-    protected HashMap<LocalDate, ArrayList<AnalyticsByMonths.Entry>> total = new HashMap<>();
+    protected HashMap<LocalDate, ArrayList<Entry>> total = new HashMap<>();
 
     public AnalyticsByDays(Result<Record6<Long, Long, Integer, Integer, Integer, BigDecimal>> result) {
         result.forEach((r) -> {
@@ -20,7 +20,7 @@ public class AnalyticsByDays extends ApiResponse {
                 total.put(date, new ArrayList<>());
 
             total.get(date)
-                    .add(new AnalyticsByMonths.Entry(r.component1(), r.component2(), r.component6()));
+                    .add(new Entry(r.component1(), r.component2(), r.component6()));
         });
     }
 
