@@ -1,5 +1,6 @@
 package app.finwave.backend.http;
 
+import app.finwave.backend.api.server.ServerApi;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public class HttpWorker {
     protected NotificationApi notificationApi;
     protected AccumulationApi accumulationApi;
     protected ReportApi reportApi;
+    protected ServerApi serverApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -66,7 +68,8 @@ public class HttpWorker {
                       AdminApi adminApi,
                       NotificationApi notificationApi,
                       AccumulationApi accumulationApi,
-                      ReportApi reportApi) {
+                      ReportApi reportApi,
+                      ServerApi serverApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -85,6 +88,7 @@ public class HttpWorker {
         this.notificationApi = notificationApi;
         this.accumulationApi = accumulationApi;
         this.reportApi = reportApi;
+        this.serverApi = serverApi;
 
         setup();
         patches();
@@ -225,6 +229,10 @@ public class HttpWorker {
             path("/reports", () -> {
                 get("/get", reportApi::downloadReport);
             });
+        });
+
+        path("/server", () -> {
+            get("/getVersion", serverApi::getVersion);
         });
     }
 
