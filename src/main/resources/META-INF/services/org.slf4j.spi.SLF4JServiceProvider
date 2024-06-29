@@ -1,1 +1,1 @@
-su.knst.finwave.logging.SLF4JProvider
+app.finwave.backend.logging.SLF4JProvider

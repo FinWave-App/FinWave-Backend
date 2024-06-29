@@ -5,7 +5,7 @@ plugins {
     id 'org.flywaydb.flyway' version '9.22.0'
 }
 
-group 'su.knst.finwave'
+group 'app.finwave.backend'
 
 version = '0.11.2'
 mainClassName = group + ".Main"
@@ -20,9 +20,8 @@ repositories {
         url 'https://repo1.maven.org/maven2'
     }
 
-    // SCW
     maven {
-        url 'https://lab.knst.su/api/v4/projects/28/packages/maven'
+        url "https://nexus.finwave.app/repository/maven-public"
     }
 }
 
@@ -48,7 +47,7 @@ dependencies {
 
     jooqGenerator 'org.postgresql:postgresql:42.6.0'
 
-    implementation 'su.knst.scw:scw:0.3.1' // Config Worker
+    implementation 'app.finwave.scw:finwave-scw:0.4.0'
 
     implementation 'com.sparkjava:spark-core:2.9.4'
 
@@ -118,7 +117,7 @@ jooq {
                         fluentSetters = true
                     }
                     target {
-                        packageName = 'su.knst.finwave.jooq'
+                        packageName = 'app.finwave.backend.jooq'
                         directory = 'build/generated-src/jooq/main'
                     }
                     strategy.name = 'org.jooq.codegen.DefaultGeneratorStrategy'
