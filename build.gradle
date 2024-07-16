@@ -47,7 +47,7 @@ dependencies {
 
     jooqGenerator 'org.postgresql:postgresql:42.6.0'
 
-    implementation 'app.finwave.scw:finwave-scw:0.4.0'
+    implementation 'app.finwave.scw:finwave-scw:0.4.1'
 
     implementation 'com.sparkjava:spark-core:2.9.4'
 

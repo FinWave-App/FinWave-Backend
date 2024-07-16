@@ -45,11 +45,6 @@ public class Configs {
         if (node.isEmpty())
             return defaultState;
 
-        Optional<T> state = node.get().getAs((Class<T>) defaultState.getClass());
-
-        if (state.isEmpty())
-            node.get().setAs(defaultState);
-
-        return state.orElse(defaultState);
+        return node.get().getOrSetAs((Class<T>) defaultState.getClass(), () -> defaultState);
     }
 }
