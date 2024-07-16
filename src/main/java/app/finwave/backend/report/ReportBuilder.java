@@ -20,6 +20,7 @@ import app.finwave.backend.report.builders.ListReportBuilder;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -44,25 +45,33 @@ public class ReportBuilder {
         this.executor = Executors.newFixedThreadPool(config.threads);
     }
 
-    public Future<?> buildAsync(String token) {
-        return executor.submit(() -> {
+    public CompletableFuture<ReportStatus> buildAsync(String token) {
+        CompletableFuture<ReportStatus> result = new CompletableFuture<>();
+
+        executor.submit(() -> {
             ReportStatus status = ReportStatus.FAILED;
 
-            Optional<ReportsRecord> recordOptional = reportDatabase.getReport(token);
+            try{
+                Optional<ReportsRecord> recordOptional = reportDatabase.getReport(token);
 
-            if (recordOptional.isEmpty())
-                return;
+                if (recordOptional.isEmpty())
+                    return;
 
-            ReportsRecord record = recordOptional.get();
+                ReportsRecord record = recordOptional.get();
 
-            try {
-                status = buildAndSave(record);
-            } catch (Exception e) {
-                e.printStackTrace();
+                try {
+                    status = buildAndSave(record);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                reportDatabase.updateReport(token, status);
+            }finally {
+                result.complete(status);
             }
-
-            reportDatabase.updateReport(token, status);
         });
+
+        return result;
     }
 
     protected ReportStatus buildAndSave(ReportsRecord record) throws IOException {

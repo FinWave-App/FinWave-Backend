@@ -1,5 +1,8 @@
 package app.finwave.backend.http;
 
+import app.finwave.backend.api.event.WebSocketClient;
+import app.finwave.backend.api.event.WebSocketHandler;
+import app.finwave.backend.api.event.WebSocketWorker;
 import app.finwave.backend.api.server.ServerApi;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -89,6 +92,8 @@ public class HttpWorker {
         this.accumulationApi = accumulationApi;
         this.reportApi = reportApi;
         this.serverApi = serverApi;
+
+        webSocket("/websockets/events", WebSocketHandler.class);
 
         setup();
         patches();

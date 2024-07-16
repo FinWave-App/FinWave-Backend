@@ -1,5 +1,7 @@
 package app.finwave.backend.api.transaction;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -34,12 +36,16 @@ public class TransactionApi {
     protected AccountDatabase accountDatabase;
     protected TransactionConfig config;
 
+    protected WebSocketWorker socketWorker;
+
     @Inject
-    public TransactionApi(TransactionsManager manager, DatabaseWorker databaseWorker, Configs configs) {
+    public TransactionApi(TransactionsManager manager, DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.config = configs.getState(new TransactionConfig());
         this.manager = manager;
         this.tagDatabase = databaseWorker.get(TransactionTagDatabase.class);
         this.accountDatabase = databaseWorker.get(AccountDatabase.class);
+
+        this.socketWorker = socketWorker;
     }
 
     public Object newBulkTransactions(Request request, Response response) {
@@ -76,6 +82,8 @@ public class TransactionApi {
         });
 
         manager.applyBulkTransactions(args, sessionsRecord.getUserId());
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactions"));
 
         response.status(201);
 
@@ -135,6 +143,8 @@ public class TransactionApi {
                 description.orElse(null))
         );
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactions"));
+
         response.status(201);
 
         return new NewTransactionResponse(transactionId);
@@ -175,6 +185,8 @@ public class TransactionApi {
                 description.orElse(null)
         ));
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactions"));
+
         response.status(201);
 
         return new NewTransactionResponse(transactionId);
@@ -189,6 +201,8 @@ public class TransactionApi {
                 .require();
 
         manager.cancelTransaction(transactionId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactions"));
 
         response.status(200);
 
@@ -227,6 +241,8 @@ public class TransactionApi {
                 .optional();
 
         manager.editTransaction(transactionId, new TransactionEditRecord(tagId, accountId, time, delta, description.orElse(null)));
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactions"));
 
         response.status(200);
 

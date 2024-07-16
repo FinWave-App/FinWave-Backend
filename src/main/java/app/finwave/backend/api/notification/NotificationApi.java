@@ -1,5 +1,7 @@
 package app.finwave.backend.api.notification;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jose4j.base64url.Base64Url;
@@ -31,13 +33,19 @@ public class NotificationApi {
     protected NotificationDatabase database;
     protected NotificationManager manager;
     protected NotificationsConfig config;
+
+    protected WebSocketWorker socketWorker;
+
     protected String vapidPublicKey;
 
     @Inject
-    public NotificationApi(DatabaseWorker databaseWorker, NotificationManager manager, Configs configs) {
+    public NotificationApi(DatabaseWorker databaseWorker, NotificationManager manager, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(NotificationDatabase.class);
         this.manager = manager;
         this.config = configs.getState(new NotificationsConfig());
+
+        this.socketWorker = socketWorker;
+
         this.vapidPublicKey = configs.getState(new VapidKeysConfig()).publicKey;
     }
 
@@ -82,6 +90,8 @@ public class NotificationApi {
         if (pointId.isEmpty())
             halt(500);
 
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
+
         response.status(200);
 
         return new NewPointResponse(pointId.get());
@@ -98,11 +108,11 @@ public class NotificationApi {
     }
 
     public Object editPointDescription(Request request, Response response) {
-        UsersSessionsRecord sessionsRecord = request.attribute("session");
+        UsersSessionsRecord sessionRecord = request.attribute("session");
 
         long pointId = ParamsValidator
                 .longV(request, "pointId")
-                .matches((id) -> database.userOwnPoint(sessionsRecord.getUserId(), id))
+                .matches((id) -> database.userOwnPoint(sessionRecord.getUserId(), id))
                 .require();
 
         String description = ParamsValidator
@@ -112,17 +122,19 @@ public class NotificationApi {
 
         database.editNotificationPointDescription(pointId, description);
 
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
+
         response.status(200);
 
         return ApiMessage.of("Point description edited");
     }
 
     public Object editPointPrimary(Request request, Response response) {
-        UsersSessionsRecord sessionsRecord = request.attribute("session");
+        UsersSessionsRecord sessionRecord = request.attribute("session");
 
         long pointId = ParamsValidator
                 .longV(request, "pointId")
-                .matches((id) -> database.userOwnPoint(sessionsRecord.getUserId(), id))
+                .matches((id) -> database.userOwnPoint(sessionRecord.getUserId(), id))
                 .require();
 
         boolean isPrimary = ParamsValidator
@@ -132,20 +144,24 @@ public class NotificationApi {
 
         database.editNotificationPointPrimary(pointId, isPrimary);
 
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
+
         response.status(200);
 
         return ApiMessage.of("Point primary edited");
     }
 
     public Object deletePoint(Request request, Response response) {
-        UsersSessionsRecord sessionsRecord = request.attribute("session");
+        UsersSessionsRecord sessionRecord = request.attribute("session");
 
         long pointId = ParamsValidator
                 .longV(request, "pointId")
-                .matches((id) -> database.userOwnPoint(sessionsRecord.getUserId(), id))
+                .matches((id) -> database.userOwnPoint(sessionRecord.getUserId(), id))
                 .require();
 
         database.deleteNotificationPoint(pointId);
+
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
 
         response.status(200);
 

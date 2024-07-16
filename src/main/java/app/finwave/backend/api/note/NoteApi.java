@@ -1,5 +1,7 @@
 package app.finwave.backend.api.note;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -24,11 +26,14 @@ public class NoteApi {
     protected NotesConfig config;
 
     protected NoteDatabase database;
+    protected WebSocketWorker socketWorker;
 
     @Inject
-    public NoteApi(Configs configs, DatabaseWorker databaseWorker) {
+    public NoteApi(Configs configs, DatabaseWorker databaseWorker, WebSocketWorker socketWorker) {
         this.config = configs.getState(new NotesConfig());
         this.database = databaseWorker.get(NoteDatabase.class);
+
+        this.socketWorker = socketWorker;
     }
 
     public Object newNote(Request request, Response response) {
@@ -54,6 +59,8 @@ public class NoteApi {
         if (noteId.isEmpty())
             halt(500);
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("notes"));
+
         response.status(201);
 
         return new NewNoteResponse(noteId.get());
@@ -73,6 +80,8 @@ public class NoteApi {
                 .require();
 
         database.editNote(noteId, text);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("notes"));
 
         response.status(200);
 
@@ -94,6 +103,8 @@ public class NoteApi {
                 .require();
 
         database.updateNotificationTime(noteId, time);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("notes"));
 
         response.status(200);
 
@@ -147,6 +158,8 @@ public class NoteApi {
                 .require();
 
         database.deleteNote(noteId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("notes"));
 
         response.status(200);
 

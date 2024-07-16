@@ -1,5 +1,7 @@
 package app.finwave.backend.api.currency;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -22,10 +24,12 @@ import static spark.Spark.halt;
 public class CurrencyApi {
     protected CurrencyDatabase database;
     protected CurrencyConfig config;
+    protected WebSocketWorker socketWorker;
 
     @Inject
-    public CurrencyApi(DatabaseWorker databaseWorker, Configs configs) {
+    public CurrencyApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(CurrencyDatabase.class);
+        this.socketWorker = socketWorker;
 
         config = configs.getState(new CurrencyConfig());
     }
@@ -61,6 +65,8 @@ public class CurrencyApi {
         if (currencyId.isEmpty())
             halt(500);
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("currencies"));
+
         return new NewCurrencyResponse(currencyId.get());
     }
 
@@ -87,6 +93,8 @@ public class CurrencyApi {
 
         database.editCurrencyCode(currencyId, code);
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("currencies"));
+
         response.status(200);
 
         return ApiMessage.of("Currency code edited");
@@ -107,6 +115,8 @@ public class CurrencyApi {
 
         database.editCurrencySymbol(currencyId, symbol);
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("currencies"));
+
         response.status(200);
 
         return ApiMessage.of("Currency symbol edited");
@@ -124,6 +134,8 @@ public class CurrencyApi {
                 .integer(request, "decimals")
                 .range(1, config.maxDecimals)
                 .require();
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("currencies"));
 
         database.editCurrencyDecimals(currencyId, (short) decimals);
 
@@ -144,6 +156,8 @@ public class CurrencyApi {
                 .string(request, "description")
                 .length(1, config.maxCodeLength)
                 .require();
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("currencies"));
 
         database.editCurrencyDescription(currencyId, description);
 

@@ -1,5 +1,6 @@
 package app.finwave.backend.api.user;
 
+import app.finwave.backend.api.event.WebSocketWorker;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;

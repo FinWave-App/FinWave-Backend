@@ -1,5 +1,7 @@
 package app.finwave.backend.api.report;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.DateFormatter;
@@ -44,11 +46,15 @@ public class ReportApi {
     protected ReportDatabase database;
     protected ReportBuilder builder;
 
+    protected WebSocketWorker socketWorker;
+
     @Inject
-    public ReportApi(Configs configs, DatabaseWorker databaseWorker, ReportBuilder builder) {
+    public ReportApi(Configs configs, DatabaseWorker databaseWorker, ReportBuilder builder, WebSocketWorker socketWorker) {
         this.config = configs.getState(new ReportConfig());
         this.database = databaseWorker.get(ReportDatabase.class);
         this.builder = builder;
+
+        this.socketWorker = socketWorker;
     }
 
     public Object newReport(Request request, Response response) {
@@ -69,7 +75,9 @@ public class ReportApi {
                 config.expiresDays
         );
 
-        builder.buildAsync(token);
+        builder.buildAsync(token).whenComplete((r, t) -> {
+            socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("reports"));
+        });
 
         response.status(202);
 

@@ -1,5 +1,7 @@
 package app.finwave.backend.api.accumulation;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -36,8 +38,10 @@ public class AccumulationApi {
     protected AccountDatabase accountDatabase;
     protected TransactionTagDatabase transactionTagDatabase;
 
+    protected WebSocketWorker socketWorker;
+
     @Inject
-    public AccumulationApi(DatabaseWorker databaseWorker, Configs configs) {
+    public AccumulationApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(AccumulationDatabase.class);
         this.accountDatabase = databaseWorker.get(AccountDatabase.class);
         this.transactionTagDatabase = databaseWorker.get(TransactionTagDatabase.class);
@@ -64,6 +68,8 @@ public class AccumulationApi {
                 args.steps
         ));
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accumulation"));
+
         response.status(200);
 
         return ApiMessage.of("Accumulation set");
@@ -78,6 +84,8 @@ public class AccumulationApi {
                 .require();
 
         database.removeAccumulation(accountId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accumulation"));
 
         response.status(200);
 

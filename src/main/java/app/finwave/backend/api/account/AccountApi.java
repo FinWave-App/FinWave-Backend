@@ -1,5 +1,7 @@
 package app.finwave.backend.api.account;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -29,13 +31,17 @@ public class AccountApi {
 
     protected AccountsConfig config;
 
+    protected WebSocketWorker socketWorker;
+
     @Inject
-    public AccountApi(DatabaseWorker databaseWorker, Configs configs) {
+    public AccountApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(AccountDatabase.class);
         this.tagDatabase = databaseWorker.get(AccountTagDatabase.class);
         this.currencyDatabase = databaseWorker.get(CurrencyDatabase.class);
 
         this.config = configs.getState(new AccountsConfig());
+
+        this.socketWorker = socketWorker;
     }
 
     public Object newAccount(Request request, Response response) {
@@ -70,6 +76,8 @@ public class AccountApi {
         if (accountId.isEmpty())
             halt(500);
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
+
         response.status(201);
 
         return new NewAccountResponse(accountId.get());
@@ -93,9 +101,11 @@ public class AccountApi {
                 .matches((id) -> database.userOwnAccount(sessionsRecord.getUserId(), id))
                 .require();
 
-        response.status(200);
-
         database.hideAccount(accountId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
+
+        response.status(200);
 
         return ApiMessage.of("Account hided");
     }
@@ -108,9 +118,11 @@ public class AccountApi {
                 .matches((id) -> database.userOwnAccount(sessionsRecord.getUserId(), id))
                 .require();
 
-        response.status(200);
-
         database.showAccount(accountId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
+
+        response.status(200);
 
         return ApiMessage.of("Account showed");
     }
@@ -129,6 +141,8 @@ public class AccountApi {
                 .require();
 
         database.editAccountName(accountId, name);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
 
         response.status(200);
 
@@ -150,6 +164,8 @@ public class AccountApi {
 
         database.editAccountDescription(accountId, description.orElse(null));
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
+
         response.status(200);
 
         return ApiMessage.of("Account description edited");
@@ -169,6 +185,8 @@ public class AccountApi {
                 .require();
 
         database.editAccountTag(accountId, tagId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
 
         response.status(200);
 

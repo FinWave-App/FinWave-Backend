@@ -1,5 +1,7 @@
 package app.finwave.backend.api.notification;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.notification.data.point.WebSocketPointData;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import nl.martijndwars.webpush.PushAsyncService;
@@ -23,10 +25,13 @@ import static app.finwave.backend.api.ApiResponse.GSON;
 @Singleton
 public class NotificationPusher {
     protected PushAsyncService pushService;
+    protected WebSocketWorker socketWorker;
 
     @Inject
-    public NotificationPusher(Configs configs) throws GeneralSecurityException {
+    public NotificationPusher(Configs configs, WebSocketWorker socketWorker) throws GeneralSecurityException {
         VapidKeysConfig config = configs.getState(new VapidKeysConfig());
+
+        this.socketWorker = socketWorker;
 
         this.pushService = new PushAsyncService(new KeyPair(
                 VapidGenerator.stringToPublicKey(config.publicKey),
@@ -39,14 +44,23 @@ public class NotificationPusher {
 
         switch (NotificationPointType.values()[(int)pointRecord.getType()]){
             case WEB_PUSH -> {
-                pushWeb(pointRecord, notification).whenComplete((r, t) -> {
-                    result.complete(t == null);
-                });
+                pushWeb(pointRecord, notification)
+                        .whenComplete((r, t) -> result.complete(t == null));
+            }
+            case WEB_SOCKET -> {
+                pushSocket(pointRecord, notification)
+                        .whenComplete((r, t) -> result.complete(t == null));
             }
             default -> result.complete(false);
         }
 
         return result;
+    }
+
+    protected CompletableFuture<Boolean> pushSocket(NotificationsPointsRecord pointRecord, Notification notification) {
+        WebSocketPointData data = GSON.fromJson(pointRecord.getData().data(), WebSocketPointData.class);
+
+        return socketWorker.sendNotification(data.uuid, notification);
     }
 
     protected CompletableFuture<Response> pushWeb(NotificationsPointsRecord pointRecord, Notification notification) {
