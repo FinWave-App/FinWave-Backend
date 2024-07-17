@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static app.finwave.backend.api.ApiResponse.GSON;
+import static app.finwave.backend.api.notification.data.point.NotificationPointType.WEB_SOCKET;
 
 public class WebSocketClient {
     protected WebSocketWorker worker;
@@ -47,6 +48,12 @@ public class WebSocketClient {
     }
 
     public void onMessage(String rawMessage) throws IOException {
+        if (rawMessage.equals("ping")) {
+            send("pong");
+
+            return;
+        }
+
         RequestMessage message;
 
         try {
@@ -78,6 +85,20 @@ public class WebSocketClient {
 
         if (body.pointUUID == null) {
             send(new GenericResponse("Invalid request", 1));
+
+            return;
+        }
+
+        var userPoints = notificationDatabase.getUserNotificationsPoints(userId);
+
+        Optional<WebSocketPointData> pointData = userPoints.stream()
+                .filter(p -> p.getType() == WEB_SOCKET.ordinal())
+                .map(p -> GSON.fromJson(p.getData().data(), WebSocketPointData.class))
+                .filter(d -> d.uuid.equals(body.pointUUID))
+                .findAny();
+
+        if (pointData.isEmpty()) {
+            send(new GenericResponse("Invalid UUID", 1));
 
             return;
         }
