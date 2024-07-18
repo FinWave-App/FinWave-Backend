@@ -1,5 +1,7 @@
 package app.finwave.backend.api.transaction.recurring;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -32,8 +34,10 @@ public class RecurringTransactionApi {
     protected RecurringTransactionConfig config;
     protected TransactionsManager manager;
 
+    protected WebSocketWorker socketWorker;
+
     @Inject
-    public RecurringTransactionApi(DatabaseWorker databaseWorker, TransactionsManager manager, Configs configs) {
+    public RecurringTransactionApi(DatabaseWorker databaseWorker, TransactionsManager manager, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(RecurringTransactionDatabase.class);
         this.tagDatabase = databaseWorker.get(TransactionTagDatabase.class);
         this.accountDatabase = databaseWorker.get(AccountDatabase.class);
@@ -41,6 +45,8 @@ public class RecurringTransactionApi {
         this.manager = manager;
 
         this.config = configs.getState(new RecurringTransactionConfig());
+
+        this.socketWorker = socketWorker;
     }
 
     public Object newRecurringTransaction(Request request, Response response) {
@@ -98,6 +104,8 @@ public class RecurringTransactionApi {
                 delta,
                 description.orElse(null)
         ).orElseThrow();
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("recurringTransactions"));
 
         response.status(201);
 
@@ -165,6 +173,8 @@ public class RecurringTransactionApi {
                 description.orElse(null)
         );
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("recurringTransactions"));
+
         response.status(200);
 
         return ApiMessage.of("Recurring transaction edited");
@@ -179,6 +189,8 @@ public class RecurringTransactionApi {
                 .require();
 
         database.deleteRecurring(recurringId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("recurringTransactions"));
 
         response.status(200);
 

@@ -1,5 +1,7 @@
 package app.finwave.backend.api.account.tag;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -22,11 +24,14 @@ import static spark.Spark.halt;
 public class AccountTagApi {
     protected AccountsConfig config;
     protected AccountTagDatabase database;
+    protected WebSocketWorker socketWorker;
 
     @Inject
-    public AccountTagApi(DatabaseWorker databaseWorker, Configs configs) {
+    public AccountTagApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(AccountTagDatabase.class);
         this.config = configs.getState(new AccountsConfig());
+
+        this.socketWorker = socketWorker;
     }
 
     public Object newTag(Request request, Response response) {
@@ -49,6 +54,8 @@ public class AccountTagApi {
 
         if (tagId.isEmpty())
             halt(500);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accountTags"));
 
         response.status(201);
 
@@ -80,6 +87,8 @@ public class AccountTagApi {
 
         database.editTagName(tagId, name);
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accountTags"));
+
         response.status(200);
 
         return ApiMessage.of("Tag name edited");
@@ -100,6 +109,8 @@ public class AccountTagApi {
 
         database.editTagDescription(tagId, description.orElse(null));
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accountTags"));
+
         response.status(200);
 
         return ApiMessage.of("Tag description edited");
@@ -115,6 +126,8 @@ public class AccountTagApi {
                 .require();
 
         database.deleteTag(tagId);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accountTags"));
 
         response.status(200);
 

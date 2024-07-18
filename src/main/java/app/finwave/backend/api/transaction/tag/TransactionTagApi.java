@@ -1,5 +1,7 @@
 package app.finwave.backend.api.transaction.tag;
 
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -22,11 +24,14 @@ import static spark.Spark.halt;
 public class TransactionTagApi {
     protected TransactionTagDatabase database;
     protected TransactionConfig config;
+    protected WebSocketWorker socketWorker;
 
     @Inject
-    public TransactionTagApi(DatabaseWorker databaseWorker, Configs configs) {
+    public TransactionTagApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(TransactionTagDatabase.class);
         this.config = configs.getState(new TransactionConfig());
+
+        this.socketWorker = socketWorker;
     }
 
     public Object newTag(Request request, Response response) {
@@ -65,6 +70,8 @@ public class TransactionTagApi {
         if (tagId.isEmpty())
             halt(500);
 
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactionTags"));
+
         response.status(201);
 
         return new NewTagResponse(tagId.get());
@@ -93,9 +100,11 @@ public class TransactionTagApi {
                 .range(-1,1)
                 .require();
 
-        response.status(200);
-
         database.editTagType(tagId, (short) type);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactionTags"));
+
+        response.status(200);
 
         return ApiMessage.of("Tag type edited");
     }
@@ -126,9 +135,11 @@ public class TransactionTagApi {
                 return ApiMessage.of("Bad request");
             }
 
-            response.status(200);
-
             database.setParentToRoot(tagId);
+
+            socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactionTags"));
+
+            response.status(200);
 
             return ApiMessage.of("Tag parent edited");
         }
@@ -153,9 +164,11 @@ public class TransactionTagApi {
                 .length(1, config.tags.maxNameLength)
                 .require();
 
-        response.status(200);
-
         database.editTagName(tagId, name);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactionTags"));
+
+        response.status(200);
 
         return ApiMessage.of("Tag name edited");
     }
@@ -173,9 +186,11 @@ public class TransactionTagApi {
                 .length(1, config.tags.maxDescriptionLength)
                 .require();
 
-        response.status(200);
-
         database.editTagDescription(tagId, description);
+
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactionTags"));
+
+        response.status(200);
 
         return ApiMessage.of("Tag description edited");
     }

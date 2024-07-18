@@ -70,5 +70,4 @@ public final class Notification extends MessageBody {
                 "userId=" + userId + ", " +
                 "createdAt=" + createdAt + ']';
     }
-
 }

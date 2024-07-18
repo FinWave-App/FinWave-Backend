@@ -47,6 +47,7 @@ public class AccumulationApi {
         this.transactionTagDatabase = databaseWorker.get(TransactionTagDatabase.class);
 
         this.config = configs.getState(new AccumulationConfig());
+        this.socketWorker = socketWorker;
     }
 
     public Object setAccumulation(Request request, Response response) {
