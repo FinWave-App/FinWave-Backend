@@ -7,7 +7,7 @@ plugins {
 
 group 'app.finwave.backend'
 
-version = '0.12.0'
+version = '0.12.1'
 mainClassName = group + ".Main"
 archivesBaseName = 'FinWave'
 

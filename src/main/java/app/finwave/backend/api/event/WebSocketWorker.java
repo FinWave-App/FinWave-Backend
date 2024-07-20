@@ -22,9 +22,11 @@ public class WebSocketWorker {
     protected HashMap<Integer, HashSet<WebSocketClient>> authedClients = new HashMap<>();
 
     protected HashMap<UUID, WebSocketClient> notificationSubscribes = new HashMap<>();
+    protected HashMap<WebSocketClient, UUID> reversedNotificationSubscribes = new HashMap<>();
 
     protected ReentrantLock anonLock = new ReentrantLock();
     protected ReentrantLock authedLock = new ReentrantLock();
+    protected ReentrantLock notificationLock = new ReentrantLock();
 
     protected HashMap<Integer, ReentrantLock> authedLocks = new HashMap<>();
 
@@ -69,6 +71,15 @@ public class WebSocketWorker {
             authedLock.unlock();
             setLock.unlock();
         }
+
+        notificationLock.lock();
+
+        try {
+            UUID removed = reversedNotificationSubscribes.remove(client);
+            notificationSubscribes.remove(removed);
+        }finally {
+            notificationLock.unlock();
+        }
     }
 
     public Optional<UsersSessionsRecord> authClient(WebSocketClient client, String token) {
@@ -98,12 +109,19 @@ public class WebSocketWorker {
     }
 
     public boolean subscribeNotification(WebSocketClient client, UUID pointUUID) {
-        if (notificationSubscribes.containsKey(pointUUID))
-            return false;
+        notificationLock.lock();
 
-        notificationSubscribes.put(pointUUID, client);
+        try {
+            if (notificationSubscribes.containsKey(pointUUID))
+                return false;
 
-        return true;
+            notificationSubscribes.put(pointUUID, client);
+            reversedNotificationSubscribes.put(client, pointUUID);
+
+            return true;
+        }finally {
+            notificationLock.unlock();
+        }
     }
 
     protected HashSet<WebSocketClient> getUserClients(int userId) {
@@ -121,20 +139,33 @@ public class WebSocketWorker {
     }
 
     public CompletableFuture<Boolean> sendNotification(UUID uuid, Notification notification) {
-        if (!notificationSubscribes.containsKey(uuid))
-            return CompletableFuture.completedFuture(false);
-
         CompletableFuture<Boolean> result = new CompletableFuture<>();
 
         executor.submit(() -> {
             boolean taskResult = false;
+            WebSocketClient client;
+
+            notificationLock.lock();
+            try {
+                if (!notificationSubscribes.containsKey(uuid)) {
+                    result.complete(taskResult);
+
+                    return;
+                }
+
+                client = notificationSubscribes.get(uuid);
+            }finally {
+                notificationLock.unlock();
+            }
 
             try {
-                notificationSubscribes.get(uuid).send(new NotificationEvent(notification)).get();
-                taskResult = true;
-            } catch (Exception ignored) {
+                if (client != null) {
+                    client.send(new NotificationEvent(notification)).get();
 
-            }
+                    taskResult = true;
+                }
+            }catch (Exception ignored) {}
+
 
             result.complete(taskResult);
         });
