@@ -64,7 +64,7 @@ public class SessionApi {
 
         response.status(200);
 
-        return new GetSessionsResponse(records);
+        return new GetSessionsResponse(records, sessionRecord.getId());
     }
 
     public Object deleteSession(Request request, Response response) {
@@ -90,19 +90,22 @@ public class SessionApi {
 
     static class GetSessionsResponse extends ApiResponse {
         public final List<Entry> sessions;
+        public final long currentId;
 
-        public GetSessionsResponse(List<UsersSessionsRecord> sessions) {
+        public GetSessionsResponse(List<UsersSessionsRecord> sessions, long currentId) {
             this.sessions = sessions.stream()
                     .map(r -> new Entry(
                             r.getId(),
-                            r.getToken(),
+                            r.getLimited(),
                             r.getCreatedAt(),
                             r.getExpiresAt(),
                             r.getDescription()))
                     .toList();
+
+            this.currentId = currentId;
         }
 
-        record Entry(long sessionId, String token, LocalDateTime createdAt, LocalDateTime expiresAt, String description) {}
+        record Entry(long sessionId, boolean limited, LocalDateTime createdAt, LocalDateTime expiresAt, String description) {}
     }
 
     static class NewSessionResponse extends ApiResponse {
