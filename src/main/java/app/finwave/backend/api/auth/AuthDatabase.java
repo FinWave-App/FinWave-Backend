@@ -33,10 +33,4 @@ public class AuthDatabase extends AbstractDatabase{
 
         return record;
     }
-
-    public Optional<UsersSessionsRecord> authUser(String sessionToken) {
-        return context.selectFrom(USERS_SESSIONS)
-                .where(USERS_SESSIONS.TOKEN.eq(sessionToken))
-                .fetchOptional();
-    }
 }

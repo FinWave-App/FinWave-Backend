@@ -1,11 +1,11 @@
 package app.finwave.backend.api.admin;
 
+import app.finwave.backend.api.session.SessionManager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import app.finwave.backend.api.ApiResponse;
-import app.finwave.backend.api.session.SessionDatabase;
 import app.finwave.backend.api.user.UserDatabase;
 import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.http.ApiMessage;
@@ -21,13 +21,13 @@ import static spark.Spark.halt;
 public class AdminApi {
     protected AdminDatabase database;
     protected UserDatabase userDatabase;
-    protected SessionDatabase sessionDatabase;
+    protected SessionManager sessionManager;
 
     @Inject
-    public AdminApi(DatabaseWorker databaseWorker) {
-        database = databaseWorker.get(AdminDatabase.class);
-        userDatabase = databaseWorker.get(UserDatabase.class);
-        sessionDatabase = databaseWorker.get(SessionDatabase.class);
+    public AdminApi(DatabaseWorker databaseWorker, SessionManager sessionManager) {
+        this.database = databaseWorker.get(AdminDatabase.class);
+        this.userDatabase = databaseWorker.get(UserDatabase.class);
+        this.sessionManager = sessionManager;
     }
 
     public Object getUsers(Request request, Response response) {
@@ -78,7 +78,7 @@ public class AdminApi {
                 .require();
 
         userDatabase.changeUserPassword(userId, password);
-        sessionDatabase.deleteAllUserSessions(userId);
+        sessionManager.deleteAllUserSessions(userId);
 
         response.status(201);
 

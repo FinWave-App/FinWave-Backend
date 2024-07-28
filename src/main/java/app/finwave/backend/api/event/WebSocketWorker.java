@@ -4,6 +4,7 @@ import app.finwave.backend.api.auth.AuthDatabase;
 import app.finwave.backend.api.event.messages.ResponseMessage;
 import app.finwave.backend.api.event.messages.response.notifications.NotificationEvent;
 import app.finwave.backend.api.notification.data.Notification;
+import app.finwave.backend.api.session.SessionManager;
 import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
 import com.google.inject.Inject;
@@ -30,13 +31,13 @@ public class WebSocketWorker {
 
     protected HashMap<Integer, ReentrantLock> authedLocks = new HashMap<>();
 
-    protected AuthDatabase authDatabase;
+    protected SessionManager sessionManager;
 
     protected ExecutorService executor = Executors.newCachedThreadPool();
 
     @Inject
-    public WebSocketWorker(DatabaseWorker databaseWorker) {
-        this.authDatabase = databaseWorker.get(AuthDatabase.class);
+    public WebSocketWorker(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
     }
 
     public void registerAnonClient(WebSocketClient client) {
@@ -83,7 +84,7 @@ public class WebSocketWorker {
     }
 
     public Optional<UsersSessionsRecord> authClient(WebSocketClient client, String token) {
-        Optional<UsersSessionsRecord> record = authDatabase.authUser(token);
+        Optional<UsersSessionsRecord> record = sessionManager.auth(token);
 
         if (record.isEmpty())
             return Optional.empty();

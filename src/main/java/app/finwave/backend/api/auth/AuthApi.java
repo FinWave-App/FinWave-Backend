@@ -1,11 +1,11 @@
 package app.finwave.backend.api.auth;
 
+import app.finwave.backend.api.session.SessionManager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import app.finwave.backend.api.ApiResponse;
-import app.finwave.backend.api.session.SessionDatabase;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.general.UserConfig;
 import app.finwave.backend.database.DatabaseWorker;
@@ -23,12 +23,12 @@ import static app.finwave.backend.utils.TokenGenerator.generateSessionToken;
 public class AuthApi {
     protected UserConfig config;
     protected AuthDatabase database;
-    protected SessionDatabase sessionDatabase;
+    protected SessionManager sessionManager;
 
     @Inject
-    public AuthApi(DatabaseWorker databaseWorker, Configs configs) {
+    public AuthApi(DatabaseWorker databaseWorker, SessionManager sessionManager, Configs configs) {
         this.database = databaseWorker.get(AuthDatabase.class);
-        this.sessionDatabase = databaseWorker.get(SessionDatabase.class);
+        this.sessionManager = sessionManager;
         this.config = configs.getState(new UserConfig());
     }
 
@@ -44,7 +44,7 @@ public class AuthApi {
         if (token.isEmpty())
             throw new AuthenticationFailException();
 
-        Optional<UsersSessionsRecord> sessionsRecord = database.authUser(token.get());
+        Optional<UsersSessionsRecord> sessionsRecord = sessionManager.auth(token.get());
 
         if (sessionsRecord.isEmpty())
             throw new AuthenticationFailException();
@@ -52,13 +52,13 @@ public class AuthApi {
         LocalDateTime now = LocalDateTime.now();
 
         if (sessionsRecord.get().getExpiresAt().isBefore(now)) {
-            sessionDatabase.deleteSession(sessionsRecord.get().getToken());
+            sessionManager.deleteSession(sessionsRecord.get());
 
             throw new AuthenticationFailException();
         }
 
         if (now.plusDays(config.userSessionsLifetimeDays - 1).isAfter(sessionsRecord.get().getExpiresAt()))
-            sessionDatabase.updateSessionLifetime(sessionsRecord.get().getToken(), config.userSessionsLifetimeDays);
+            sessionManager.updateSessionLifetime(sessionsRecord.get());
 
         request.attribute("session", sessionsRecord.get());
     }
@@ -91,19 +91,20 @@ public class AuthApi {
                 .length(1, config.maxSessionDescriptionLength)
                 .optional();
 
-        Optional<UsersRecord> sessionsRecord = database.authUser(login, password);
+        Optional<UsersRecord> usersRecord = database.authUser(login, password);
 
-        if (sessionsRecord.isEmpty())
+        if (usersRecord.isEmpty())
             halt(401);
 
-        if (config.demoMode && sessionsRecord.get().getId() == 1)
+        if (config.demoMode && usersRecord.get().getId() == 1)
             halt(401);
 
-        String token = generateSessionToken();
+        Optional<String> token = sessionManager.newSession(usersRecord.get().getId(), config.userSessionsLifetimeDays, description.orElse(null), false);
 
-        sessionDatabase.newSession(sessionsRecord.get().getId(), token, config.userSessionsLifetimeDays, description.orElse(null), false);
+        if (token.isEmpty())
+            halt(500);
 
-        return new LoginResponse(token, config.userSessionsLifetimeDays);
+        return new LoginResponse(token.get(), config.userSessionsLifetimeDays);
     }
 
     static class LoginResponse extends ApiResponse {

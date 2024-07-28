@@ -1,12 +1,12 @@
 package app.finwave.backend.api.user;
 
 import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.session.SessionManager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import app.finwave.backend.api.ApiResponse;
-import app.finwave.backend.api.session.SessionDatabase;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.general.UserConfig;
 import app.finwave.backend.database.DatabaseWorker;
@@ -22,14 +22,14 @@ import static spark.Spark.halt;
 @Singleton
 public class UserApi {
     protected UserDatabase database;
-    protected SessionDatabase sessionDatabase;
+    protected SessionManager sessionManager;
 
     protected UserConfig config;
 
     @Inject
-    public UserApi(DatabaseWorker databaseWorker, Configs configs) {
+    public UserApi(DatabaseWorker databaseWorker, SessionManager sessionManager, Configs configs) {
         this.database = databaseWorker.get(UserDatabase.class);
-        this.sessionDatabase = databaseWorker.get(SessionDatabase.class);
+        this.sessionManager = sessionManager;
 
         this.config = configs.getState(new UserConfig());
     }
@@ -103,7 +103,7 @@ public class UserApi {
                 .require();
 
         database.changeUserPassword(sessionsRecord.getUserId(), password);
-        sessionDatabase.deleteAllUserSessions(sessionsRecord.getUserId());
+        sessionManager.deleteAllUserSessions(sessionsRecord.getUserId());
 
         response.status(200);
 
@@ -123,7 +123,7 @@ public class UserApi {
     public Object logout(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        sessionDatabase.deleteSession(sessionsRecord.getId());
+        sessionManager.deleteSession(sessionsRecord);
 
         response.status(200);
 

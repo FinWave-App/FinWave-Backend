@@ -17,15 +17,16 @@ import java.util.List;
 import java.util.Optional;
 
 import static app.finwave.backend.utils.TokenGenerator.generateSessionToken;
+import static spark.Spark.halt;
 
 @Singleton
 public class SessionApi {
-    protected SessionDatabase database;
+    protected SessionManager manager;
     protected UserConfig config;
 
     @Inject
-    public SessionApi(DatabaseWorker databaseWorker, Configs configs) {
-        this.database = databaseWorker.get(SessionDatabase.class);
+    public SessionApi(SessionManager manager, Configs configs) {
+        this.manager = manager;
         this.config = configs.getState(new UserConfig());
     }
 
@@ -48,19 +49,20 @@ public class SessionApi {
                 .length(1, config.maxSessionDescriptionLength)
                 .optional();
 
-        String token = generateSessionToken();
+        Optional<String> token = manager.newSession(sessionRecord.getUserId(), lifetimeDays, description.orElse(null), true);
 
-        database.newSession(sessionRecord.getUserId(), token, lifetimeDays, description.orElse(null), true);
+        if (token.isEmpty())
+            halt(500);
 
         response.status(200);
 
-        return new NewSessionResponse(token);
+        return new NewSessionResponse(token.get());
     }
 
     public Object getSessions(Request request, Response response) {
         UsersSessionsRecord sessionRecord = request.attribute("session");
 
-        List<UsersSessionsRecord> records = database.getUserSessions(sessionRecord.getUserId());
+        List<UsersSessionsRecord> records = manager.getSessions(sessionRecord.getUserId());
 
         response.status(200);
 
@@ -78,10 +80,10 @@ public class SessionApi {
 
         long sessionId = ParamsValidator
                 .integer(request, "sessionId")
-                .matches((id) -> database.userOwnSession(sessionRecord.getUserId(), id))
+                .matches((id) -> manager.userOwnSession(sessionRecord.getUserId(), id))
                 .require();
 
-        database.deleteSession(sessionId);
+        manager.deleteSession(sessionId);
 
         response.status(200);
 
