@@ -1,6 +1,7 @@
 package app.finwave.backend.api.session;
 
 import app.finwave.backend.config.Configs;
+import app.finwave.backend.config.general.CachingConfig;
 import app.finwave.backend.config.general.UserConfig;
 import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
@@ -33,15 +34,17 @@ public class SessionManager {
         this.database = databaseWorker.get(SessionDatabase.class);
         this.config = configs.getState(new UserConfig());
 
+        CachingConfig.Sessions cacheConfig = configs.getState(new CachingConfig()).sessions;
+
         this.tokenCache = CacheHandyBuilder.loading(
                 1, TimeUnit.DAYS,
-                500,
+                cacheConfig.maxTokens,
                 (t) -> database.get(t)
         );
 
         this.listCache = CacheHandyBuilder.loading(
                 1, TimeUnit.DAYS,
-                100,
+                cacheConfig.maxLists,
                 (userId) -> {
                     var result = database.getUserSessions(userId);
 
