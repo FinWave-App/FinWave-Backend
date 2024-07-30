@@ -7,4 +7,4 @@ WORKDIR /finwave
 
 COPY ./FinWave.jar ./
 
-ENTRYPOINT ["java", "-jar", "FinWave.jar"]
+ENTRYPOINT exec java $JAVA_OPTS -jar FinWave.jar
