@@ -8,11 +8,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class AnalyticsByDays extends ApiResponse {
-    protected HashMap<LocalDate, ArrayList<Entry>> total = new HashMap<>();
+    protected HashMap<LocalDate, ArrayList<TagSummary>> total = new HashMap<>();
 
-    public AnalyticsByDays(Result<Record6<Long, Long, Integer, Integer, Integer, BigDecimal>> result) {
+    public static final AnalyticsByDays EMPTY = new AnalyticsByDays(List.of());
+
+    public AnalyticsByDays(List<Record6<Long, Long, Integer, Integer, Integer, BigDecimal>> result) {
         result.forEach((r) -> {
             LocalDate date = LocalDate.of(r.component5(), r.component4(), r.component3());
 
@@ -20,9 +23,7 @@ public class AnalyticsByDays extends ApiResponse {
                 total.put(date, new ArrayList<>());
 
             total.get(date)
-                    .add(new Entry(r.component1(), r.component2(), r.component6()));
+                    .add(new TagSummary(r.component1(), r.component2(), r.component6()));
         });
     }
-
-    protected record Entry(long currencyId, long tagId, BigDecimal delta) {}
 }

@@ -1,11 +1,11 @@
 package app.finwave.backend.api.analytics;
 
+import app.finwave.backend.api.analytics.result.*;
+import app.finwave.backend.utils.params.ParamsValidator;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
-import app.finwave.backend.api.analytics.result.AnalyticsByDays;
-import app.finwave.backend.api.analytics.result.AnalyticsByMonths;
 import app.finwave.backend.api.transaction.filter.TransactionsFilter;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.app.AnalyticsConfig;
@@ -14,16 +14,31 @@ import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
 import app.finwave.backend.utils.params.InvalidParameterException;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Singleton
 public class AnalyticsApi {
-    protected AnalyticsDatabase database;
+    protected AnalyticsManager manager;
     protected AnalyticsConfig config;
 
     @Inject
-    public AnalyticsApi(Configs configs, DatabaseWorker databaseWorker) {
+    public AnalyticsApi(Configs configs, AnalyticsManager manager) {
         this.config = configs.getState(new AnalyticsConfig());
-        this.database = databaseWorker.get(AnalyticsDatabase.class);
+        this.manager = manager;
+    }
+
+    public Object getTagsAnalytics(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        OffsetDateTime time = ParamsValidator
+                .string(request, "time")
+                .map(OffsetDateTime::parse);
+
+        List<TagSummaryWithManagement> summaryList = manager.getTagsAnalytics(sessionsRecord.getUserId(), time);
+
+        response.status(200);
+
+        return new TagsAnalytics(summaryList);
     }
 
     public Object getAnalyticsByMonths(Request request, Response response) {
@@ -38,9 +53,9 @@ public class AnalyticsApi {
             filter.setToTime(OffsetDateTime.now());
 
         if (!filter.validateTime(config.maxTimeRangeDaysForMonths))
-            throw new InvalidParameterException("Invalid date");
+            throw new InvalidParameterException();
 
-        AnalyticsByMonths analytics = database.getAnalyticsByMonths(sessionsRecord.getUserId(), filter);
+        AnalyticsByMonths analytics = manager.getAnalyticsByMonths(sessionsRecord.getUserId(), filter);
 
         response.status(200);
 
@@ -61,7 +76,7 @@ public class AnalyticsApi {
         if (!filter.validateTime(config.maxTimeRangeDaysForDays))
             throw new IllegalArgumentException();
 
-        AnalyticsByDays analytics = database.getAnalyticsByDays(sessionsRecord.getUserId(), filter);
+        AnalyticsByDays analytics = manager.getAnalyticsByDays(sessionsRecord.getUserId(), filter);
 
         response.status(200);
 

@@ -136,7 +136,13 @@ public class WebSocketWorker {
     }
 
     protected ReentrantLock getAuthedLock(int userId) {
-        return authedLocks.computeIfAbsent(userId, k -> new ReentrantLock());
+        authedLock.lock();
+
+        try {
+            return authedLocks.computeIfAbsent(userId, k -> new ReentrantLock());
+        }finally {
+            authedLock.unlock();
+        }
     }
 
     public CompletableFuture<Boolean> sendNotification(UUID uuid, Notification notification) {

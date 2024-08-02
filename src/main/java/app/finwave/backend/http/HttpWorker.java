@@ -4,6 +4,7 @@ import app.finwave.backend.api.event.WebSocketClient;
 import app.finwave.backend.api.event.WebSocketHandler;
 import app.finwave.backend.api.event.WebSocketWorker;
 import app.finwave.backend.api.server.ServerApi;
+import app.finwave.backend.api.transaction.tag.managment.TagManagementApi;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class HttpWorker {
     protected AdminApi adminApi;
     protected NotificationApi notificationApi;
     protected AccumulationApi accumulationApi;
+    protected TagManagementApi tagManagementApi;
     protected ReportApi reportApi;
     protected ServerApi serverApi;
 
@@ -71,6 +73,7 @@ public class HttpWorker {
                       AdminApi adminApi,
                       NotificationApi notificationApi,
                       AccumulationApi accumulationApi,
+                      TagManagementApi tagManagementApi,
                       ReportApi reportApi,
                       ServerApi serverApi) {
         this.config = configs.getState(new HttpConfig());
@@ -90,6 +93,7 @@ public class HttpWorker {
         this.adminApi = adminApi;
         this.notificationApi = notificationApi;
         this.accumulationApi = accumulationApi;
+        this.tagManagementApi = tagManagementApi;
         this.reportApi = reportApi;
         this.serverApi = serverApi;
 
@@ -182,6 +186,13 @@ public class HttpWorker {
                     post("/editParent", transactionTagApi::editTagParent);
                     post("/editName", transactionTagApi::editTagName);
                     post("/editDescription", transactionTagApi::editTagDescription);
+
+                    path("/management", () -> {
+                        get("/getList", tagManagementApi::getSettings);
+                        post("/add", tagManagementApi::addManagement);
+                        post("/edit", tagManagementApi::editManagement);
+                        post("/remove", tagManagementApi::remove);
+                    });
                 });
 
                 path("/recurring", () -> {
@@ -203,6 +214,7 @@ public class HttpWorker {
             path("/analytics", () -> {
                 get("/getByMonths", analyticsApi::getAnalyticsByMonths);
                 get("/getByDays", analyticsApi::getAnalyticsByDays);
+                get("/getTagsAnalytics", analyticsApi::getTagsAnalytics);
             });
 
             path("/notifications", () -> {
