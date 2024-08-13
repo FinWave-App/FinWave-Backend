@@ -23,14 +23,6 @@ public class TokenGenerator {
                 .toString();
     }
 
-    public static String generateReportToken() {
-        return random
-                .ints(128, 0, tokenSymbols.length)
-                .mapToObj((i) -> tokenSymbols[i])
-                .collect(StringBuffer::new, StringBuffer::append, StringBuffer::append)
-                .toString();
-    }
-
     public static String generateDemoLogin() {
         return "demo_" + random
                 .ints(11, 0, tokenSymbols.length)

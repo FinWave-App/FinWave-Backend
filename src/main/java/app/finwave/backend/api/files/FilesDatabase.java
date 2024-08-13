@@ -26,7 +26,7 @@ public class FilesDatabase extends AbstractDatabase {
     }
 
     public Optional<FilesRecord> registerNewEmptyFile(int userId, OffsetDateTime createdAt, OffsetDateTime expiredAt, boolean isPublic, String source) {
-        String token = TokenGenerator.generateReportToken();
+        String token = TokenGenerator.generateFileToken();
 
         return context.insertInto(FILES)
                 .set(FILES.ID, token)
