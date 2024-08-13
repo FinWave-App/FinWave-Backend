@@ -6,6 +6,7 @@ import app.finwave.backend.config.general.FilesConfig;
 import app.finwave.backend.http.ApiMessage;
 import app.finwave.backend.jooq.tables.records.FilesRecord;
 import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
+import app.finwave.backend.utils.params.InvalidParameterException;
 import app.finwave.backend.utils.params.ParamsValidator;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -80,7 +81,7 @@ public class FilesApi {
         Optional<FilesRecord> record = manager.registerNewEmptyFile(sessionRecord.getUserId(), expiredAfterDays, isPublic, "webUpload");
 
         if (record.isEmpty())
-            halt(400);
+            halt(500);
 
         LimitedWithCallbackOutputStream stream = null;
         try {
@@ -174,8 +175,9 @@ public class FilesApi {
                 .string(request, "fileId")
                 .map(manager::getFileRecord);
 
-        if (record.isEmpty() || !record.get().getIsPublic())
-            halt(403);
+        if (record.isEmpty() || !record.get().getIsPublic()) {
+            throw new InvalidParameterException("fileId");
+        }
 
         return verifyAndSend(record.get(), response);
     }
@@ -189,7 +191,7 @@ public class FilesApi {
                 .map(manager::getFileRecord);
 
         if (record.isEmpty())
-            halt(403);
+            throw new InvalidParameterException("fileId");
 
         return verifyAndSend(record.get(), response);
     }
