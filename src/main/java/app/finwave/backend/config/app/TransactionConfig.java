@@ -7,15 +7,15 @@ public class TransactionConfig implements GroupedConfig {
     public int maxTransactionsInListPerRequest = 128;
     public int maxDescriptionLength = 256;
 
-    public TransactionTagConfig tags = new TransactionTagConfig();
+    public CategoryConfig categories = new CategoryConfig();
 
     @Override
     public ConfigGroup group() {
         return ConfigGroup.APPLICATION;
     }
 
-    public static class TransactionTagConfig {
-        public int maxTagsPerUser = 256;
+    public static class CategoryConfig {
+        public int maxCategoriesPerUser = 256;
         public int maxNameLength = 64;
         public int maxDescriptionLength = 128;
     }

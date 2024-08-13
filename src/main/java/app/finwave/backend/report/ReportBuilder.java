@@ -1,5 +1,6 @@
 package app.finwave.backend.report;
 
+import app.finwave.backend.api.files.FilesManager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.Record;
@@ -35,9 +36,13 @@ public class ReportBuilder {
     protected DatabaseWorker worker;
     protected ExecutorService executor;
 
+    protected FilesManager filesManager;
+
     @Inject
-    public ReportBuilder(DatabaseWorker worker, Configs configs) {
+    public ReportBuilder(DatabaseWorker worker, Configs configs, FilesManager filesManager) {
         this.worker = worker;
+        this.filesManager = filesManager;
+
         this.transactionDatabase = worker.get(TransactionDatabase.class);
         this.reportDatabase = worker.get(ReportDatabase.class);
 
@@ -45,14 +50,14 @@ public class ReportBuilder {
         this.executor = Executors.newFixedThreadPool(config.threads);
     }
 
-    public CompletableFuture<ReportStatus> buildAsync(String token) {
+    public CompletableFuture<ReportStatus> buildAsync(long reportId) {
         CompletableFuture<ReportStatus> result = new CompletableFuture<>();
 
         executor.submit(() -> {
             ReportStatus status = ReportStatus.FAILED;
 
             try{
-                Optional<ReportsRecord> recordOptional = reportDatabase.getReport(token);
+                Optional<ReportsRecord> recordOptional = reportDatabase.getReport(reportId);
 
                 if (recordOptional.isEmpty())
                     return;
@@ -65,7 +70,7 @@ public class ReportBuilder {
                     e.printStackTrace();
                 }
 
-                reportDatabase.updateReport(token, status);
+                reportDatabase.updateReport(reportId, status);
             }finally {
                 result.complete(status);
             }
@@ -107,13 +112,13 @@ public class ReportBuilder {
 
         switch (type) {
             case BY_DAYS -> {
-                return new ByDaysReportBuilder(reportsRecord, worker);
+                return new ByDaysReportBuilder(reportsRecord, worker, filesManager);
             }
             case BY_MONTHS -> {
-                return new ByMonthsReportBuilder(reportsRecord, worker);
+                return new ByMonthsReportBuilder(reportsRecord, worker, filesManager);
             }
             default -> {
-                return new ListReportBuilder(reportsRecord, worker);
+                return new ListReportBuilder(reportsRecord, worker, filesManager);
             }
         }
     }

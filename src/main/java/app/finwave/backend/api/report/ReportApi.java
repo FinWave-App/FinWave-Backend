@@ -2,42 +2,35 @@ package app.finwave.backend.api.report;
 
 import app.finwave.backend.api.event.WebSocketWorker;
 import app.finwave.backend.api.event.messages.response.NotifyUpdate;
+import app.finwave.backend.api.files.FilesManager;
+import app.finwave.backend.jooq.tables.records.FilesRecord;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.DateFormatter;
 import spark.Request;
 import spark.Response;
 import app.finwave.backend.api.ApiResponse;
-import app.finwave.backend.api.accumulation.AccumulationApi;
 import app.finwave.backend.api.report.data.ReportType;
-import app.finwave.backend.api.session.SessionApi;
 import app.finwave.backend.api.transaction.filter.TransactionsFilter;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.app.ReportConfig;
-import app.finwave.backend.config.general.ReportBuilderConfig;
 import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.jooq.tables.records.ReportsRecord;
 import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
 import app.finwave.backend.report.ReportBuilder;
-import app.finwave.backend.report.ReportFileWorker;
 import app.finwave.backend.utils.params.ParamsValidator;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.file.Files;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.zip.ZipEntry;
 
 import static spark.Spark.halt;
-import static app.finwave.backend.utils.TokenGenerator.generateSessionToken;
 
 @Singleton
 public class ReportApi {
@@ -46,15 +39,30 @@ public class ReportApi {
     protected ReportDatabase database;
     protected ReportBuilder builder;
 
+    protected FilesManager filesManager;
+
     protected WebSocketWorker socketWorker;
 
     @Inject
-    public ReportApi(Configs configs, DatabaseWorker databaseWorker, ReportBuilder builder, WebSocketWorker socketWorker) {
+    public ReportApi(Configs configs, DatabaseWorker databaseWorker, ReportBuilder builder, WebSocketWorker socketWorker, FilesManager filesManager) {
         this.config = configs.getState(new ReportConfig());
         this.database = databaseWorker.get(ReportDatabase.class);
         this.builder = builder;
 
         this.socketWorker = socketWorker;
+        this.filesManager = filesManager;
+
+        filesManager.addFileDeletionListener((r) -> {
+            Optional<ReportsRecord> optionalReport = database.getReportByFile(r.getId());
+
+            if (optionalReport.isEmpty())
+                return;
+
+            int userId = optionalReport.get().getUserId();
+
+            database.removeReport(optionalReport.get().getId());
+            socketWorker.sendToUser(userId, new NotifyUpdate("reports"));
+        });
     }
 
     public Object newReport(Request request, Response response) {
@@ -66,22 +74,27 @@ public class ReportApi {
                 .matches(ReportRequest::validateLang)
                 .require();
 
-        String token = database.newReport(
+        Optional<FilesRecord> filesRecord = filesManager.registerNewEmptyFile(sessionRecord.getUserId(), config.expiresDays, true, "reports");
+
+        if (filesRecord.isEmpty())
+            halt(500);
+
+        long reportId = database.newReport(
                 reportRequest.description,
                 reportRequest.filter,
                 reportRequest.lang,
                 ReportType.values()[reportRequest.type],
                 sessionRecord.getUserId(),
-                config.expiresDays
+                filesRecord.get().getId()
         );
 
-        builder.buildAsync(token).whenComplete((r, t) -> {
+        builder.buildAsync(reportId).whenComplete((r, t) -> {
             socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("reports"));
         });
 
         response.status(202);
 
-        return new NewReportResponse(token);
+        return new NewReportResponse(reportId, filesRecord.get().getId());
     }
 
     public Object getList(Request request, Response response) {
@@ -92,45 +105,6 @@ public class ReportApi {
         response.status(200);
 
         return new GetListResponse(records);
-    }
-
-    public Object downloadReport(Request request, Response response) {
-        String token = ParamsValidator
-                .string(request, "token")
-                .require();
-
-        Optional<ReportsRecord> record = database.getReport(token);
-        if (record.isEmpty() || record.get().getStatus() != 1)
-            halt(400);
-
-        Optional<File> optionalFile = ReportFileWorker.get(token);
-        if (optionalFile.isEmpty())
-            halt(500);
-
-        File reportFile = optionalFile.get();
-
-        String filename = record.get().getDescription() == null ? DateFormatter.format(Date.from(record.get().getCreatedAt().toInstant())) : record.get().getDescription();
-        filename = filename
-                .replace(',', '_')
-                .replace(' ', '_');
-
-        response.header("Content-Type", "text/csv");
-        response.header("Content-Disposition", "attachment;filename=" + filename + ".csv");
-
-        try {
-            try(BufferedOutputStream outputStream = new BufferedOutputStream(response.raw().getOutputStream());
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(reportFile)))
-            {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = bufferedInputStream.read(buffer)) > 0)
-                    outputStream.write(buffer, 0, len);
-            }
-        } catch (Exception e) {
-            halt(405);
-        }
-
-        return response.raw();
     }
 
     record ReportRequest(String description, TransactionsFilter filter, int type, Map<String, String> lang) {
@@ -157,19 +131,18 @@ public class ReportApi {
                             r.getDescription(),
                             r.getStatus(),
                             r.getType(),
-                            r.getCreatedAt(),
-                            r.getExpiresAt()
+                            r.getFileId()
                     )).toList();
         }
 
-        record Entry(String token, String description, short status, short type, OffsetDateTime created, OffsetDateTime expires) {}
+        record Entry(long reportId, String description, short status, short type, String fileId) {}
     }
 
     static class NewReportResponse extends ApiResponse {
-        public final String token;
+        public final long reportId;
 
-        public NewReportResponse(String token) {
-            this.token = token;
+        public NewReportResponse(long reportId, String fileId) {
+            this.reportId = reportId;
         }
     }
 }

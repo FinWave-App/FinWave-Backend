@@ -11,7 +11,7 @@ import java.util.Objects;
 public class TransactionsFilter {
     public static final TransactionsFilter EMPTY = new TransactionsFilter();
 
-    protected List<Long> tagsIds;
+    protected List<Long> categoriesIds;
     protected List<Long> accountIds;
     protected List<Long> currenciesIds;
     protected OffsetDateTime fromTime;
@@ -21,8 +21,8 @@ public class TransactionsFilter {
     protected TransactionsFilter() {
     }
 
-    public TransactionsFilter(List<Long> tagsIds, List<Long> accountIds, List<Long> currenciesIds, OffsetDateTime fromTime, OffsetDateTime toTime, String description) {
-        this.tagsIds = tagsIds;
+    public TransactionsFilter(List<Long> categoriesIds, List<Long> accountIds, List<Long> currenciesIds, OffsetDateTime fromTime, OffsetDateTime toTime, String description) {
+        this.categoriesIds = categoriesIds;
         this.accountIds = accountIds;
         this.currenciesIds = currenciesIds;
         this.fromTime = fromTime;
@@ -30,8 +30,8 @@ public class TransactionsFilter {
         this.description = description;
     }
 
-    public TransactionsFilter(String tagsIdRaw, String accountIdsRaw, String currenciesIdsRaw, String fromTimeRaw, String toTimeRaw, String description) {
-        this(parseIds(tagsIdRaw),
+    public TransactionsFilter(String categoriesIdsRaw, String accountIdsRaw, String currenciesIdsRaw, String fromTimeRaw, String toTimeRaw, String description) {
+        this(parseIds(categoriesIdsRaw),
                 parseIds(accountIdsRaw),
                 parseIds(currenciesIdsRaw),
                 fromTimeRaw != null ? OffsetDateTime.parse(fromTimeRaw) : null,
@@ -41,7 +41,7 @@ public class TransactionsFilter {
     }
 
     public TransactionsFilter(Request request) {
-        this(request.queryParams("tagsIds"),
+        this(request.queryParams("categoriesIds"),
                 request.queryParams("accountsIds"),
                 request.queryParams("currenciesIds"),
                 request.queryParams("fromTime"),
@@ -68,8 +68,8 @@ public class TransactionsFilter {
                 .toList();
     }
 
-    public List<Long> getTagsIds() {
-        return tagsIds;
+    public List<Long> getCategoriesIds() {
+        return categoriesIds;
     }
 
     public List<Long> getAccountIds() {
@@ -92,8 +92,8 @@ public class TransactionsFilter {
         return description;
     }
 
-    public void setTagsIds(List<Long> tagsIds) {
-        this.tagsIds = tagsIds;
+    public void setCategoriesIds(List<Long> categoriesIds) {
+        this.categoriesIds = categoriesIds;
     }
 
     public void setAccountIds(List<Long> accountIds) {
@@ -121,11 +121,11 @@ public class TransactionsFilter {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TransactionsFilter that = (TransactionsFilter) o;
-        return Objects.equals(tagsIds, that.tagsIds) && Objects.equals(accountIds, that.accountIds) && Objects.equals(currenciesIds, that.currenciesIds) && Objects.equals(fromTime, that.fromTime) && Objects.equals(toTime, that.toTime) && Objects.equals(description, that.description);
+        return Objects.equals(categoriesIds, that.categoriesIds) && Objects.equals(accountIds, that.accountIds) && Objects.equals(currenciesIds, that.currenciesIds) && Objects.equals(fromTime, that.fromTime) && Objects.equals(toTime, that.toTime) && Objects.equals(description, that.description);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tagsIds, accountIds, currenciesIds, fromTime, toTime, description);
+        return Objects.hash(categoriesIds, accountIds, currenciesIds, fromTime, toTime, description);
     }
 }

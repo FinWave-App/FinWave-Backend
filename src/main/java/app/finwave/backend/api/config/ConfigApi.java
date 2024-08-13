@@ -1,5 +1,6 @@
 package app.finwave.backend.api.config;
 
+import app.finwave.backend.config.general.AiConfig;
 import com.google.common.hash.Hashing;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -27,7 +28,8 @@ public class ConfigApi {
                 configs.getState(new NotificationsConfig()),
                 configs.getState(new AccumulationConfig()),
                 configs.getState(new RecurringTransactionConfig()),
-                configs.getState(new ReportConfig())
+                configs.getState(new ReportConfig()),
+                new AiPublic(configs.getState(new AiConfig()).enabled)
         );
 
         this.authConfigJson = ApiResponse.GSON.toJson(publicConfigs);
@@ -51,5 +53,8 @@ public class ConfigApi {
                          NotificationsConfig notifications,
                          AccumulationConfig accumulation,
                          RecurringTransactionConfig recurring,
-                         ReportConfig reports) { }
+                         ReportConfig reports,
+                         AiPublic ai) { }
+
+    record AiPublic(boolean enabled) {}
 }

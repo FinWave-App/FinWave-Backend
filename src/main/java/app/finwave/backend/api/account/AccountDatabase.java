@@ -17,10 +17,10 @@ public class AccountDatabase extends AbstractDatabase {
         super(context);
     }
 
-    public Optional<Long> newAccount(int userId, long tagId, long currencyId, String name, String description) {
+    public Optional<Long> newAccount(int userId, long folderId, long currencyId, String name, String description) {
         return context.insertInto(ACCOUNTS)
                 .set(ACCOUNTS.OWNER_ID, userId)
-                .set(ACCOUNTS.TAG_ID, tagId)
+                .set(ACCOUNTS.FOLDER_ID, folderId)
                 .set(ACCOUNTS.CURRENCY_ID, currencyId)
                 .set(ACCOUNTS.AMOUNT, BigDecimal.ZERO)
                 .set(ACCOUNTS.HIDDEN, false)
@@ -82,9 +82,9 @@ public class AccountDatabase extends AbstractDatabase {
                 .fetch();
     }
 
-    public void editAccountTag(long accountId, long tagId) {
+    public void editAccountFolder(long accountId, long folderId) {
         context.update(ACCOUNTS)
-                .set(ACCOUNTS.TAG_ID, tagId)
+                .set(ACCOUNTS.FOLDER_ID, folderId)
                 .where(ACCOUNTS.ID.eq((accountId)))
                 .execute();
     }

@@ -7,7 +7,7 @@ import com.google.inject.Singleton;
 import spark.Request;
 import spark.Response;
 import app.finwave.backend.api.ApiResponse;
-import app.finwave.backend.api.account.tag.AccountTagDatabase;
+import app.finwave.backend.api.account.folder.AccountFolderDatabase;
 import app.finwave.backend.api.currency.CurrencyDatabase;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.app.AccountsConfig;
@@ -26,7 +26,7 @@ import static spark.Spark.halt;
 @Singleton
 public class AccountApi {
     protected AccountDatabase database;
-    protected AccountTagDatabase tagDatabase;
+    protected AccountFolderDatabase folderDatabase;
     protected CurrencyDatabase currencyDatabase;
 
     protected AccountsConfig config;
@@ -36,7 +36,7 @@ public class AccountApi {
     @Inject
     public AccountApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.database = databaseWorker.get(AccountDatabase.class);
-        this.tagDatabase = databaseWorker.get(AccountTagDatabase.class);
+        this.folderDatabase = databaseWorker.get(AccountFolderDatabase.class);
         this.currencyDatabase = databaseWorker.get(CurrencyDatabase.class);
 
         this.config = configs.getState(new AccountsConfig());
@@ -47,9 +47,9 @@ public class AccountApi {
     public Object newAccount(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        long tagId = ParamsValidator
-                .longV(request, "tagId")
-                .matches((id) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), id))
+        long folderId = ParamsValidator
+                .longV(request, "folderId")
+                .matches((id) -> folderDatabase.userOwnFolder(sessionsRecord.getUserId(), id))
                 .require();
 
         long currencyId = ParamsValidator
@@ -71,7 +71,7 @@ public class AccountApi {
             halt(409);
 
         Optional<Long> accountId = database
-                .newAccount(sessionsRecord.getUserId(), tagId, currencyId, name, description.orElse(null));
+                .newAccount(sessionsRecord.getUserId(), folderId, currencyId, name, description.orElse(null));
 
         if (accountId.isEmpty())
             halt(500);
@@ -171,7 +171,7 @@ public class AccountApi {
         return ApiMessage.of("Account description edited");
     }
 
-    public Object editAccountTag(Request request, Response response) {
+    public Object editAccountFolder(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         long accountId = ParamsValidator
@@ -179,18 +179,18 @@ public class AccountApi {
                 .matches((id) -> database.userOwnAccount(sessionsRecord.getUserId(), id))
                 .require();
 
-        long tagId = ParamsValidator
-                .longV(request, "tagId")
-                .matches((id) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), id))
+        long folderId = ParamsValidator
+                .longV(request, "folderId")
+                .matches((id) -> folderDatabase.userOwnFolder(sessionsRecord.getUserId(), id))
                 .require();
 
-        database.editAccountTag(accountId, tagId);
+        database.editAccountFolder(accountId, folderId);
 
         socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
 
         response.status(200);
 
-        return ApiMessage.of("Account tag edited");
+        return ApiMessage.of("Account folder edited");
     }
 
     static class GetAccountsListResponse extends ApiResponse {
@@ -201,7 +201,7 @@ public class AccountApi {
                     .stream()
                     .map(v -> new Entry(
                             v.getId(),
-                            v.getTagId(),
+                            v.getFolderId(),
                             v.getCurrencyId(),
                             v.getAmount(),
                             v.getHidden(),
@@ -210,7 +210,7 @@ public class AccountApi {
                     .toList();
         }
 
-        record Entry(long accountId, long tagId, long currencyId, BigDecimal amount, boolean hidden, String name, String description) {}
+        record Entry(long accountId, long folderId, long currencyId, BigDecimal amount, boolean hidden, String name, String description) {}
     }
 
     static class NewAccountResponse extends ApiResponse {

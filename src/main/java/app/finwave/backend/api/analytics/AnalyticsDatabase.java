@@ -21,14 +21,14 @@ public class AnalyticsDatabase extends AbstractDatabase {
         Condition condition = TransactionDatabase.generateFilterCondition(userId, filter);
 
         var result = context.select(TRANSACTIONS.CURRENCY_ID,
-                        TRANSACTIONS.TAG_ID,
+                        TRANSACTIONS.CATEGORY_ID,
                         month(TRANSACTIONS.CREATED_AT),
                         year(TRANSACTIONS.CREATED_AT),
                         sum(TRANSACTIONS.DELTA))
                 .from(TRANSACTIONS)
                 .where(condition)
                 .groupBy(TRANSACTIONS.CURRENCY_ID,
-                        TRANSACTIONS.TAG_ID,
+                        TRANSACTIONS.CATEGORY_ID,
                         month(TRANSACTIONS.CREATED_AT),
                         year(TRANSACTIONS.CREATED_AT))
                 .fetch();
@@ -40,7 +40,7 @@ public class AnalyticsDatabase extends AbstractDatabase {
         Condition condition = TransactionDatabase.generateFilterCondition(userId, filter);
 
         var result = context.select(TRANSACTIONS.CURRENCY_ID,
-                        TRANSACTIONS.TAG_ID,
+                        TRANSACTIONS.CATEGORY_ID,
                         day(TRANSACTIONS.CREATED_AT),
                         month(TRANSACTIONS.CREATED_AT),
                         year(TRANSACTIONS.CREATED_AT),
@@ -49,7 +49,7 @@ public class AnalyticsDatabase extends AbstractDatabase {
                 .where(condition)
                 .groupBy(
                         TRANSACTIONS.CURRENCY_ID,
-                        TRANSACTIONS.TAG_ID,
+                        TRANSACTIONS.CATEGORY_ID,
                         day(TRANSACTIONS.CREATED_AT),
                         month(TRANSACTIONS.CREATED_AT),
                         year(TRANSACTIONS.CREATED_AT))

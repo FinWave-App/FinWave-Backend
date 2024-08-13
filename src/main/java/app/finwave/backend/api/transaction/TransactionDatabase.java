@@ -18,10 +18,10 @@ public class TransactionDatabase extends AbstractDatabase {
         super(context);
     }
 
-    public Optional<Long> applyTransaction(int userId, long tagId, long accountId, long currencyId, OffsetDateTime created, BigDecimal delta, String description) {
+    public Optional<Long> applyTransaction(int userId, long categoryId, long accountId, long currencyId, OffsetDateTime created, BigDecimal delta, String description) {
         return context.insertInto(TRANSACTIONS)
                 .set(TRANSACTIONS.OWNER_ID, userId)
-                .set(TRANSACTIONS.TAG_ID, tagId)
+                .set(TRANSACTIONS.CATEGORY_ID, categoryId)
                 .set(TRANSACTIONS.ACCOUNT_ID, accountId)
                 .set(TRANSACTIONS.CURRENCY_ID, currencyId)
                 .set(TRANSACTIONS.CREATED_AT, created)
@@ -66,8 +66,8 @@ public class TransactionDatabase extends AbstractDatabase {
     public static Condition generateFilterCondition(int userId, TransactionsFilter filter) {
         Condition condition = TRANSACTIONS.OWNER_ID.eq(userId);
 
-        if (filter.getTagsIds() != null)
-            condition = condition.and(generateFilterAnyCondition(TRANSACTIONS.TAG_ID, filter.getTagsIds()));
+        if (filter.getCategoriesIds() != null)
+            condition = condition.and(generateFilterAnyCondition(TRANSACTIONS.CATEGORY_ID, filter.getCategoriesIds()));
 
         if (filter.getAccountIds() != null)
             condition = condition.and(generateFilterAnyCondition(TRANSACTIONS.ACCOUNT_ID, filter.getAccountIds()));
@@ -109,13 +109,16 @@ public class TransactionDatabase extends AbstractDatabase {
                 .execute();
     }
 
-    public void editTransaction(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime created, BigDecimal delta, String description) {
-        context.update(TRANSACTIONS)
-                .set(TRANSACTIONS.TAG_ID, tagId)
+    public void editTransaction(long transactionId, long categoryId, long accountId, long currencyId, OffsetDateTime created, BigDecimal delta, String description) {
+        var update = context.update(TRANSACTIONS)
+                .set(TRANSACTIONS.CATEGORY_ID, categoryId)
                 .set(TRANSACTIONS.ACCOUNT_ID, accountId)
-                .set(TRANSACTIONS.CURRENCY_ID, currencyId)
-                .set(TRANSACTIONS.CREATED_AT, created)
-                .set(TRANSACTIONS.DELTA, delta)
+                .set(TRANSACTIONS.CURRENCY_ID, currencyId);
+
+        if (created != null)
+            update = update.set(TRANSACTIONS.CREATED_AT, created);
+
+        update.set(TRANSACTIONS.DELTA, delta)
                 .set(TRANSACTIONS.DESCRIPTION, description)
                 .where(TRANSACTIONS.ID.eq(transactionId))
                 .execute();

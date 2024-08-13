@@ -1,34 +1,37 @@
 package app.finwave.backend.report.builders;
 
+import app.finwave.backend.api.files.FilesManager;
 import org.jooq.Record;
 import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.jooq.tables.records.ReportsRecord;
-import app.finwave.backend.report.ReportFileWorker;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
+import java.security.DigestOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import static app.finwave.backend.jooq.Tables.TRANSACTIONS;
 
 public class ListReportBuilder extends AbstractReportBuilder {
-    protected String token;
+    protected OutputStream stream;
     protected BufferedWriter writer;
+
     protected DateTimeFormatter dateFormatter;
 
     protected static final String[] head = new String[]{
-            "account", "delta", "tag", "currency", "created", "description"
+            "account", "delta", "category", "currency", "created", "description"
     };
 
-    public ListReportBuilder(ReportsRecord reportsRecord, DatabaseWorker databaseWorker) throws IOException {
-        super(reportsRecord, databaseWorker);
-        this.token = reportsRecord.getId();
-        this.writer = new BufferedWriter(new FileWriter(ReportFileWorker.create(token)));
+    public ListReportBuilder(ReportsRecord reportsRecord, DatabaseWorker databaseWorker, FilesManager filesManager) throws IOException {
+        super(reportsRecord, databaseWorker, filesManager);
+
+        stream = filesManager.getAndOpenStream(reportsRecord.getFileId(), "text/csv", getFileName(), reportsRecord.getDescription()).orElseThrow();
+        writer = new BufferedWriter(new OutputStreamWriter(stream));
+
         this.dateFormatter = DateTimeFormatter
                 .ofLocalizedDateTime(FormatStyle.SHORT)
                 .withLocale(
@@ -59,19 +62,19 @@ public class ListReportBuilder extends AbstractReportBuilder {
 
     protected String buildLine(Record record) {
         long accountId = record.get(TRANSACTIONS.ACCOUNT_ID);
-        long tagId = record.get(TRANSACTIONS.TAG_ID);
+        long tagId = record.get(TRANSACTIONS.CATEGORY_ID);
         long currencyId = record.get(TRANSACTIONS.CURRENCY_ID);
         BigDecimal delta = record.get(TRANSACTIONS.DELTA);
         String created = dateFormatter.format(record.get(TRANSACTIONS.CREATED_AT));
         String description = record.get(TRANSACTIONS.DESCRIPTION);
 
         String account = accountsMap.get(accountId).getName();
-        String tag = getTransactionTagFullPath(tagId);
+        String category = getCategoryFullPath(tagId);
         String currency = currenciesMap.get(currencyId).getCode();
 
         return account + ',' +
                 delta + ',' +
-                tag + ',' +
+                category + ',' +
                 currency + ',' +
                 created.replace(',', ' ') + ',' +
                 (description == null ? "" : description);

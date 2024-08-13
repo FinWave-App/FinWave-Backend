@@ -32,6 +32,7 @@ public class WebSocketHandler {
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
+        session.setIdleTimeout(60000);
         WebSocketClient client = new WebSocketClient(session, notificationDatabase, worker, configs);
         lock.lock();
 

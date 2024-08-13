@@ -9,7 +9,6 @@ import spark.Response;
 import app.finwave.backend.api.transaction.filter.TransactionsFilter;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.app.AnalyticsConfig;
-import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
 import app.finwave.backend.utils.params.InvalidParameterException;
 
@@ -27,18 +26,20 @@ public class AnalyticsApi {
         this.manager = manager;
     }
 
-    public Object getTagsAnalytics(Request request, Response response) {
+    public Object getCategoriesAnalytics(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
         OffsetDateTime time = ParamsValidator
                 .string(request, "time")
-                .map(OffsetDateTime::parse);
+                .optional()
+                .map(OffsetDateTime::parse)
+                .orElseGet(OffsetDateTime::now);
 
-        List<TagSummaryWithManagement> summaryList = manager.getTagsAnalytics(sessionsRecord.getUserId(), time);
+        List<CategorySummaryWithBudget> summaryList = manager.getCategoriesAnalytics(sessionsRecord.getUserId(), time);
 
         response.status(200);
 
-        return new TagsAnalytics(summaryList);
+        return new CategoriesAnalytics(summaryList);
     }
 
     public Object getAnalyticsByMonths(Request request, Response response) {

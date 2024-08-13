@@ -111,7 +111,7 @@ public class AccumulationHook implements TransactionActionsHook<TransactionNewRe
                 .orElseThrow();
 
         manager.editTransaction(linkedTransactionId, new TransactionEditRecord(
-                record.get(TRANSACTIONS.TAG_ID),
+                record.get(TRANSACTIONS.CATEGORY_ID),
                 record.get(TRANSACTIONS.ACCOUNT_ID),
                 record.get(TRANSACTIONS.CREATED_AT),
                 newDelta.negate(),
@@ -119,7 +119,7 @@ public class AccumulationHook implements TransactionActionsHook<TransactionNewRe
         ));
 
         manager.editTransaction(secondTransactionId, new TransactionEditRecord(
-                secondRecord.get(TRANSACTIONS.TAG_ID),
+                secondRecord.get(TRANSACTIONS.CATEGORY_ID),
                 secondRecord.get(TRANSACTIONS.ACCOUNT_ID),
                 secondRecord.get(TRANSACTIONS.CREATED_AT),
                 newDelta,

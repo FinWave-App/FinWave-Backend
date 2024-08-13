@@ -1,16 +1,16 @@
 package app.finwave.backend.http;
 
-import app.finwave.backend.api.event.WebSocketClient;
+import app.finwave.backend.api.account.folder.AccountFolderApi;
+import app.finwave.backend.api.ai.AiApi;
 import app.finwave.backend.api.event.WebSocketHandler;
-import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.files.FilesApi;
 import app.finwave.backend.api.server.ServerApi;
-import app.finwave.backend.api.transaction.tag.managment.TagManagementApi;
+import app.finwave.backend.api.budget.CategoryBudgetApi;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import app.finwave.backend.api.account.AccountApi;
-import app.finwave.backend.api.account.tag.AccountTagApi;
 import app.finwave.backend.api.accumulation.AccumulationApi;
 import app.finwave.backend.api.admin.AdminApi;
 import app.finwave.backend.api.analytics.AnalyticsApi;
@@ -23,8 +23,8 @@ import app.finwave.backend.api.notification.NotificationApi;
 import app.finwave.backend.api.report.ReportApi;
 import app.finwave.backend.api.session.SessionApi;
 import app.finwave.backend.api.transaction.TransactionApi;
-import app.finwave.backend.api.transaction.recurring.RecurringTransactionApi;
-import app.finwave.backend.api.transaction.tag.TransactionTagApi;
+import app.finwave.backend.api.recurring.RecurringTransactionApi;
+import app.finwave.backend.api.category.CategoryApi;
 import app.finwave.backend.api.user.UserApi;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.general.HttpConfig;
@@ -41,20 +41,22 @@ public class HttpWorker {
     protected UserApi userApi;
     protected ConfigApi configApi;
     protected NoteApi noteApi;
-    protected AccountTagApi accountTagApi;
+    protected AccountFolderApi accountFolderApi;
     protected AccountApi accountApi;
     protected CurrencyApi currencyApi;
     protected TransactionApi transactionApi;
-    protected TransactionTagApi transactionTagApi;
+    protected CategoryApi categoryApi;
     protected RecurringTransactionApi recurringTransactionApi;
     protected AnalyticsApi analyticsApi;
     protected SessionApi sessionApi;
     protected AdminApi adminApi;
     protected NotificationApi notificationApi;
     protected AccumulationApi accumulationApi;
-    protected TagManagementApi tagManagementApi;
+    protected CategoryBudgetApi categoryBudgetApi;
     protected ReportApi reportApi;
     protected ServerApi serverApi;
+    protected AiApi aiApi;
+    protected FilesApi filesApi;
 
     @Inject
     public HttpWorker(Configs configs,
@@ -63,19 +65,21 @@ public class HttpWorker {
                       SessionApi sessionApi,
                       ConfigApi configApi,
                       NoteApi noteApi,
-                      AccountTagApi accountTagApi,
+                      AccountFolderApi accountFolderApi,
                       AccountApi accountApi,
                       CurrencyApi currencyApi,
                       TransactionApi transactionApi,
-                      TransactionTagApi transactionTagApi,
+                      CategoryApi categoryApi,
                       RecurringTransactionApi recurringTransactionApi,
                       AnalyticsApi analyticsApi,
                       AdminApi adminApi,
                       NotificationApi notificationApi,
                       AccumulationApi accumulationApi,
-                      TagManagementApi tagManagementApi,
+                      CategoryBudgetApi categoryBudgetApi,
                       ReportApi reportApi,
-                      ServerApi serverApi) {
+                      ServerApi serverApi,
+                      AiApi aiApi,
+                      FilesApi filesApi) {
         this.config = configs.getState(new HttpConfig());
 
         this.authApi = authApi;
@@ -83,19 +87,21 @@ public class HttpWorker {
         this.sessionApi = sessionApi;
         this.configApi = configApi;
         this.noteApi = noteApi;
-        this.accountTagApi = accountTagApi;
+        this.accountFolderApi = accountFolderApi;
         this.accountApi = accountApi;
         this.currencyApi = currencyApi;
         this.transactionApi = transactionApi;
-        this.transactionTagApi = transactionTagApi;
+        this.categoryApi = categoryApi;
         this.analyticsApi = analyticsApi;
         this.recurringTransactionApi = recurringTransactionApi;
         this.adminApi = adminApi;
         this.notificationApi = notificationApi;
         this.accumulationApi = accumulationApi;
-        this.tagManagementApi = tagManagementApi;
+        this.categoryBudgetApi = categoryBudgetApi;
         this.reportApi = reportApi;
         this.serverApi = serverApi;
+        this.aiApi = aiApi;
+        this.filesApi = filesApi;
 
         webSocket("/websockets/events", WebSocketHandler.class);
 
@@ -155,19 +161,19 @@ public class HttpWorker {
             });
 
             path("/accounts", () -> {
-                path("/tags", () -> {
-                    get("/getList", accountTagApi::getTags);
-                    post("/new", accountTagApi::newTag);
-                    post("/editName", accountTagApi::editTagName);
-                    post("/editDescription", accountTagApi::editTagDescription);
-                    post("/delete", accountTagApi::deleteTag);
+                path("/folders", () -> {
+                    get("/getList", accountFolderApi::getFolders);
+                    post("/new", accountFolderApi::newFolder);
+                    post("/editName", accountFolderApi::editFolderName);
+                    post("/editDescription", accountFolderApi::editFolderDescription);
+                    post("/delete", accountFolderApi::deleteFolder);
                 });
 
                 get("/getList", accountApi::getAccounts);
                 post("/new", accountApi::newAccount);
                 post("/editName", accountApi::editAccountName);
                 post("/editDescription", accountApi::editAccountDescription);
-                post("/editTag", accountApi::editAccountTag);
+                post("/editFolder", accountApi::editAccountFolder);
                 post("/hide", accountApi::hideAccount);
                 post("/show", accountApi::showAccount);
             });
@@ -179,19 +185,19 @@ public class HttpWorker {
             });
 
             path("/transactions", () -> {
-                path("/tags", () -> {
-                    get("/getList", transactionTagApi::getTags);
-                    post("/new", transactionTagApi::newTag);
-                    post("/editType", transactionTagApi::editTagType);
-                    post("/editParent", transactionTagApi::editTagParent);
-                    post("/editName", transactionTagApi::editTagName);
-                    post("/editDescription", transactionTagApi::editTagDescription);
+                path("/categories", () -> {
+                    get("/getList", categoryApi::getCategories);
+                    post("/new", categoryApi::newCategory);
+                    post("/editType", categoryApi::editCategoryType);
+                    post("/editParent", categoryApi::editCategoryParent);
+                    post("/editName", categoryApi::editCategoryName);
+                    post("/editDescription", categoryApi::editCategoryDescription);
 
-                    path("/management", () -> {
-                        get("/getList", tagManagementApi::getSettings);
-                        post("/add", tagManagementApi::addManagement);
-                        post("/edit", tagManagementApi::editManagement);
-                        post("/remove", tagManagementApi::remove);
+                    path("/budget", () -> {
+                        get("/getList", categoryBudgetApi::getSettings);
+                        post("/add", categoryBudgetApi::addBudget);
+                        post("/edit", categoryBudgetApi::editBudget);
+                        post("/remove", categoryBudgetApi::remove);
                     });
                 });
 
@@ -214,7 +220,7 @@ public class HttpWorker {
             path("/analytics", () -> {
                 get("/getByMonths", analyticsApi::getAnalyticsByMonths);
                 get("/getByDays", analyticsApi::getAnalyticsByDays);
-                get("/getTagsAnalytics", analyticsApi::getTagsAnalytics);
+                get("/getCategoriesAnalytics", analyticsApi::getCategoriesAnalytics);
             });
 
             path("/notifications", () -> {
@@ -229,6 +235,14 @@ public class HttpWorker {
 
                 post("/push", notificationApi::pushNotification);
             });
+
+            if (aiApi.enabled()) {
+                path("/ai", () -> {
+                    post("/newContext", aiApi::newContext);
+                    post("/attachFile", aiApi::attachFile);
+                    post("/ask", aiApi::ask);
+                });
+            }
         });
 
         path("/auth", () -> {
@@ -243,8 +257,18 @@ public class HttpWorker {
         });
 
         path("/files", () -> {
-            path("/reports", () -> {
-                get("/get", reportApi::downloadReport);
+            get("/download", filesApi::download);
+
+            path("/authed", () -> {
+                before("/*", authApi::auth);
+
+                get("/getList", filesApi::getList);
+                get("/availableSpace", filesApi::availableSpace);
+                get("/download", filesApi::downloadWithAuth);
+
+                post("/upload", filesApi::upload);
+                post("/delete", filesApi::delete);
+                post("/deleteAll", filesApi::deleteAll);
             });
         });
 

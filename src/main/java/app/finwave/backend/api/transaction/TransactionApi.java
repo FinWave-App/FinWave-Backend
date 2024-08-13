@@ -1,5 +1,6 @@
 package app.finwave.backend.api.transaction;
 
+import app.finwave.backend.api.category.CategoryDatabase;
 import app.finwave.backend.api.event.WebSocketWorker;
 import app.finwave.backend.api.event.messages.response.NotifyUpdate;
 import com.google.inject.Inject;
@@ -15,7 +16,6 @@ import app.finwave.backend.api.transaction.manager.records.BulkTransactionsRecor
 import app.finwave.backend.api.transaction.manager.records.TransactionEditRecord;
 import app.finwave.backend.api.transaction.manager.records.TransactionNewInternalRecord;
 import app.finwave.backend.api.transaction.manager.records.TransactionNewRecord;
-import app.finwave.backend.api.transaction.tag.TransactionTagDatabase;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.app.TransactionConfig;
 import app.finwave.backend.database.DatabaseWorker;
@@ -32,7 +32,7 @@ import java.util.Optional;
 @Singleton
 public class TransactionApi {
     protected TransactionsManager manager;
-    protected TransactionTagDatabase tagDatabase;
+    protected CategoryDatabase categoryDatabase;
     protected AccountDatabase accountDatabase;
     protected TransactionConfig config;
 
@@ -42,7 +42,7 @@ public class TransactionApi {
     public TransactionApi(TransactionsManager manager, DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
         this.config = configs.getState(new TransactionConfig());
         this.manager = manager;
-        this.tagDatabase = databaseWorker.get(TransactionTagDatabase.class);
+        this.categoryDatabase = databaseWorker.get(CategoryDatabase.class);
         this.accountDatabase = databaseWorker.get(AccountDatabase.class);
 
         this.socketWorker = socketWorker;
@@ -58,7 +58,7 @@ public class TransactionApi {
         args.entries().forEach((entry) -> {
             var validator = ParamsValidator.bodyObject(entry)
                     .matches((e) -> e.type == 0 || e.type == 1, "type")
-                    .matches((e) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), e.tagId), "tagId")
+                    .matches((e) -> categoryDatabase.userOwnCategory(sessionsRecord.getUserId(), e.categoryId), "categoryId")
                     .matches((e) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), e.accountId), "accountId")
                     .matches((e) -> e.created != null, "created")
                     .matches((e) -> e.delta != null, "delta")
@@ -93,9 +93,9 @@ public class TransactionApi {
     public Object newInternalTransfer(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        long tagId = ParamsValidator
-                .longV(request, "tagId")
-                .matches((id) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), id))
+        long categoryId = ParamsValidator
+                .longV(request, "categoryId")
+                .matches((id) -> categoryDatabase.userOwnCategory(sessionsRecord.getUserId(), id))
                 .require();
 
         long fromAccountId = ParamsValidator
@@ -111,7 +111,9 @@ public class TransactionApi {
 
         OffsetDateTime time = ParamsValidator
                 .string(request, "createdAt")
-                .map(OffsetDateTime::parse);
+                .optional()
+                .map(OffsetDateTime::parse)
+                .orElseGet(OffsetDateTime::now);
 
         BigDecimal fromDelta = ParamsValidator
                 .string(request, "fromDelta")
@@ -134,7 +136,7 @@ public class TransactionApi {
 
         long transactionId = manager.applyInternalTransfer(new TransactionNewInternalRecord(
                 sessionsRecord.getUserId(),
-                tagId,
+                categoryId,
                 fromAccountId,
                 toAccountId,
                 time,
@@ -153,9 +155,9 @@ public class TransactionApi {
     public Object newTransaction(Request request, Response response) {
         UsersSessionsRecord sessionsRecord = request.attribute("session");
 
-        long tagId = ParamsValidator
-                .longV(request, "tagId")
-                .matches((id) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), id))
+        long categoryId = ParamsValidator
+                .longV(request, "categoryId")
+                .matches((id) -> categoryDatabase.userOwnCategory(sessionsRecord.getUserId(), id))
                 .require();
 
         long accountId = ParamsValidator
@@ -165,7 +167,9 @@ public class TransactionApi {
 
         OffsetDateTime time = ParamsValidator
                 .string(request, "createdAt")
-                .map(OffsetDateTime::parse);
+                .optional()
+                .map(OffsetDateTime::parse)
+                .orElseGet(OffsetDateTime::now);
 
         BigDecimal delta = ParamsValidator
                 .string(request, "delta")
@@ -178,7 +182,7 @@ public class TransactionApi {
 
         long transactionId = manager.applyTransaction(new TransactionNewRecord(
                 sessionsRecord.getUserId(),
-                tagId,
+                categoryId,
                 accountId,
                 time,
                 delta,
@@ -217,9 +221,9 @@ public class TransactionApi {
                 .matches((id) -> manager.userOwnTransaction(sessionsRecord.getUserId(), id))
                 .require();
 
-        long tagId = ParamsValidator
-                .longV(request, "tagId")
-                .matches((id) -> tagDatabase.userOwnTag(sessionsRecord.getUserId(), id))
+        long categoryId = ParamsValidator
+                .longV(request, "categoryId")
+                .matches((id) -> categoryDatabase.userOwnCategory(sessionsRecord.getUserId(), id))
                 .require();
 
         long accountId = ParamsValidator
@@ -229,7 +233,9 @@ public class TransactionApi {
 
         OffsetDateTime time = ParamsValidator
                 .string(request, "createdAt")
-                .map(OffsetDateTime::parse);
+                .optional()
+                .map(OffsetDateTime::parse)
+                .orElse(null);
 
         BigDecimal delta = ParamsValidator
                 .string(request, "delta")
@@ -240,7 +246,7 @@ public class TransactionApi {
                 .length(1, config.maxDescriptionLength)
                 .optional();
 
-        manager.editTransaction(transactionId, new TransactionEditRecord(tagId, accountId, time, delta, description.orElse(null)));
+        manager.editTransaction(transactionId, new TransactionEditRecord(categoryId, accountId, time, delta, description.orElse(null)));
 
         socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("transactions"));
 
@@ -267,13 +273,14 @@ public class TransactionApi {
         int offset = ParamsValidator
                 .integer(request, "offset")
                 .range(0, Integer.MAX_VALUE)
-                .require();
+                .optional()
+                .orElse(0);
 
         int count = ParamsValidator
                 .integer(request, "count")
                 .range(1, config.maxTransactionsInListPerRequest)
-                .require();
-
+                .optional()
+                .orElse(10);
         TransactionsFilter filter = new TransactionsFilter(request);
 
         List<TransactionEntry<?>> transactions = manager.getTransactions(sessionsRecord.getUserId(), offset, count, filter);
@@ -283,7 +290,7 @@ public class TransactionApi {
         return new GetTransactionsListResponse(transactions);
     }
 
-    static class GetTransactionsListResponse extends ApiResponse {
+    public static class GetTransactionsListResponse extends ApiResponse {
         public final List<TransactionEntry<?>> transactions;
 
         public GetTransactionsListResponse(List<TransactionEntry<?>> transactions) {

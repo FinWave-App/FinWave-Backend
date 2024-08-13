@@ -9,12 +9,12 @@ import java.util.List;
 
 import static app.finwave.backend.api.ApiResponse.GSON;
 
-public record AccumulationData(long sourceAccountId, long targetAccountId, long tagId, int ownerId, ArrayList<AccumulationStep> steps) {
+public record AccumulationData(long sourceAccountId, long targetAccountId, long categoryId, int ownerId, ArrayList<AccumulationStep> steps) {
     public static AccumulationData fromRecord(AccumulationSettingsRecord record) {
         return new AccumulationData(
                 record.getSourceAccountId(),
                 record.getTargetAccountId(),
-                record.getTagId(),
+                record.getCategoryId(),
                 record.getOwnerId(),
                 GSON.fromJson(record.getSteps().data(), new TypeToken<List<AccumulationStep>>(){}.getType())
         );

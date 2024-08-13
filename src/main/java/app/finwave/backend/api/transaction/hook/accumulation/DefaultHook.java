@@ -61,7 +61,7 @@ public class DefaultHook implements TransactionActionsHook<TransactionNewRecord,
 
         long internalTransferId = manager.applyInternalTransfer(new TransactionNewInternalRecord(
                 data.ownerId(),
-                data.tagId(),
+                data.categoryId(),
                 data.sourceAccountId(),
                 data.targetAccountId(),
                 newRecord.created(),
@@ -86,7 +86,7 @@ public class DefaultHook implements TransactionActionsHook<TransactionNewRecord,
 
         applied(context, new TransactionNewRecord(
                 record.get(TRANSACTIONS.OWNER_ID),
-                editRecord.tagId(),
+                editRecord.categoryId(),
                 editRecord.accountId(),
                 editRecord.created(),
                 editRecord.delta(),

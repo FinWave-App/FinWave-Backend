@@ -9,7 +9,7 @@ import static app.finwave.backend.jooq.Tables.TRANSACTIONS;
 
 public class TransactionEntry<T extends AbstractMetadata> {
     public final long transactionId;
-    public final long tagId;
+    public final long categoryId;
     public final long accountId;
     public final long currencyId;
     public final OffsetDateTime createdAt;
@@ -17,9 +17,9 @@ public class TransactionEntry<T extends AbstractMetadata> {
     public final String description;
     public final T metadata;
 
-    public TransactionEntry(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description, T metadata) {
+    public TransactionEntry(long transactionId, long categoryId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description, T metadata) {
         this.transactionId = transactionId;
-        this.tagId = tagId;
+        this.categoryId = categoryId;
         this.accountId = accountId;
         this.currencyId = currencyId;
         this.createdAt = createdAt;
@@ -28,14 +28,14 @@ public class TransactionEntry<T extends AbstractMetadata> {
         this.metadata = metadata;
     }
 
-    public TransactionEntry(long transactionId, long tagId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {
-        this(transactionId, tagId, accountId, currencyId, createdAt, delta, description, null);
+    public TransactionEntry(long transactionId, long categoryId, long accountId, long currencyId, OffsetDateTime createdAt, BigDecimal delta, String description) {
+        this(transactionId, categoryId, accountId, currencyId, createdAt, delta, description, null);
     }
 
     public TransactionEntry(Record record, T metadata) {
         this(
                 record.get(TRANSACTIONS.ID),
-                record.get(TRANSACTIONS.TAG_ID),
+                record.get(TRANSACTIONS.CATEGORY_ID),
                 record.get(TRANSACTIONS.ACCOUNT_ID),
                 record.get(TRANSACTIONS.CURRENCY_ID),
                 record.get(TRANSACTIONS.CREATED_AT),

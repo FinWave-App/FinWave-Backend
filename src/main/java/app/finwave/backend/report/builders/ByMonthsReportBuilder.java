@@ -1,5 +1,6 @@
 package app.finwave.backend.report.builders;
 
+import app.finwave.backend.api.files.FilesManager;
 import org.jooq.Record;
 import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.jooq.tables.records.ReportsRecord;
@@ -17,8 +18,8 @@ import java.util.Set;
 import static app.finwave.backend.jooq.Tables.TRANSACTIONS;
 
 public class ByMonthsReportBuilder extends ByDaysReportBuilder {
-    public ByMonthsReportBuilder(ReportsRecord reportsRecord, DatabaseWorker databaseWorker) {
-        super(reportsRecord, databaseWorker);
+    public ByMonthsReportBuilder(ReportsRecord reportsRecord, DatabaseWorker databaseWorker, FilesManager filesManager) {
+        super(reportsRecord, databaseWorker, filesManager);
 
         this.formatter = DateTimeFormatter.ofPattern("MM/yyyy",
                 Locale.forLanguageTag(userLang.getOrDefault("dateLocale", "en-US"))
@@ -28,12 +29,12 @@ public class ByMonthsReportBuilder extends ByDaysReportBuilder {
     @Override
     public void consider(List<Record> records) {
         for (Record record : records) {
-            long tagId = record.get(TRANSACTIONS.TAG_ID);
+            long categoryId = record.get(TRANSACTIONS.CATEGORY_ID);
             long currencyId = record.get(TRANSACTIONS.CURRENCY_ID);
             BigDecimal delta = record.get(TRANSACTIONS.DELTA);
             LocalDate created = record.get(TRANSACTIONS.CREATED_AT).toLocalDate().withDayOfMonth(1);
 
-            addToCell(currencyId, tagId, created, delta);
+            addToCell(currencyId, categoryId, created, delta);
         }
     }
 }

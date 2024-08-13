@@ -11,7 +11,7 @@ import app.finwave.backend.service.demo.DemoService;
 import app.finwave.backend.service.notes.NotesService;
 import app.finwave.backend.service.notifications.NotificationsService;
 import app.finwave.backend.service.recurring.RecurringService;
-import app.finwave.backend.service.reports.ReportsService;
+import app.finwave.backend.service.files.FilesService;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,7 +28,7 @@ public class ServicesManager {
                            RecurringService recurringService,
                            NotificationsService notificationsService,
                            NotesService notesService,
-                           ReportsService reportsService,
+                           FilesService filesService,
                            DemoService demoService) {
         this.config = configs.getState(new ServiceConfig());
 
@@ -39,7 +39,7 @@ public class ServicesManager {
         initService(recurringService);
         initService(notificationsService);
         initService(notesService);
-        initService(reportsService);
+        initService(filesService);
 
         if (userConfig.demoMode) {
             initService(demoService);

@@ -7,8 +7,8 @@ import app.finwave.backend.api.notification.data.NotificationOptions;
 import app.finwave.backend.api.notification.manager.NotificationManager;
 import app.finwave.backend.api.transaction.manager.TransactionsManager;
 import app.finwave.backend.api.transaction.manager.records.TransactionNewRecord;
-import app.finwave.backend.api.transaction.recurring.NotificationMode;
-import app.finwave.backend.api.transaction.recurring.RecurringTransactionDatabase;
+import app.finwave.backend.api.recurring.NotificationMode;
+import app.finwave.backend.api.recurring.RecurringTransactionDatabase;
 import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.jooq.tables.records.RecurringTransactionsRecord;
 import app.finwave.backend.service.AbstractService;
@@ -37,7 +37,7 @@ public class RecurringService extends AbstractService {
         for (RecurringTransactionsRecord record : records) {
             transactionsManager.applyRecurringTransaction(new TransactionNewRecord(
                     record.getOwnerId(),
-                    record.getTagId(),
+                    record.getCategoryId(),
                     record.getAccountId(),
                     record.getNextRepeat(),
                     record.getDelta(),

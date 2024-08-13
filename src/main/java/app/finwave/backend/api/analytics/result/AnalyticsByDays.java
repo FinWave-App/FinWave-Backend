@@ -1,7 +1,6 @@
 package app.finwave.backend.api.analytics.result;
 
 import org.jooq.Record6;
-import org.jooq.Result;
 import app.finwave.backend.api.ApiResponse;
 
 import java.math.BigDecimal;
@@ -11,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class AnalyticsByDays extends ApiResponse {
-    protected HashMap<LocalDate, ArrayList<TagSummary>> total = new HashMap<>();
+    protected HashMap<LocalDate, ArrayList<CategorySummary>> total = new HashMap<>();
 
     public static final AnalyticsByDays EMPTY = new AnalyticsByDays(List.of());
 
@@ -23,7 +22,7 @@ public class AnalyticsByDays extends ApiResponse {
                 total.put(date, new ArrayList<>());
 
             total.get(date)
-                    .add(new TagSummary(r.component1(), r.component2(), r.component6()));
+                    .add(new CategorySummary(r.component1(), r.component2(), r.component6()));
         });
     }
 }

@@ -2,22 +2,21 @@ package app.finwave.backend.api.analytics;
 
 import app.finwave.backend.api.analytics.result.AnalyticsByDays;
 import app.finwave.backend.api.analytics.result.AnalyticsByMonths;
-import app.finwave.backend.api.analytics.result.TagSummary;
-import app.finwave.backend.api.analytics.result.TagSummaryWithManagement;
+import app.finwave.backend.api.analytics.result.CategorySummary;
+import app.finwave.backend.api.analytics.result.CategorySummaryWithBudget;
+import app.finwave.backend.api.category.CategoryDatabase;
 import app.finwave.backend.api.transaction.filter.TransactionsFilter;
 import app.finwave.backend.api.transaction.hook.TransactionActionsHook;
 import app.finwave.backend.api.transaction.manager.TransactionsManager;
-import app.finwave.backend.api.transaction.manager.records.TransactionEditRecord;
 import app.finwave.backend.api.transaction.manager.records.TransactionNewInternalRecord;
 import app.finwave.backend.api.transaction.manager.records.TransactionNewRecord;
-import app.finwave.backend.api.transaction.tag.TagTree;
-import app.finwave.backend.api.transaction.tag.TransactionTagDatabase;
-import app.finwave.backend.api.transaction.tag.managment.TagManagementManager;
+import app.finwave.backend.api.category.BudgetTree;
+import app.finwave.backend.api.budget.CategoryBudgetManager;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.general.CachingConfig;
 import app.finwave.backend.database.DatabaseWorker;
-import app.finwave.backend.jooq.tables.records.TransactionsTagsManagementRecord;
-import app.finwave.backend.jooq.tables.records.TransactionsTagsRecord;
+import app.finwave.backend.jooq.tables.records.CategoriesBudgetsRecord;
+import app.finwave.backend.jooq.tables.records.CategoriesRecord;
 import app.finwave.backend.utils.CacheHandyBuilder;
 import com.google.common.cache.Cache;
 import com.google.common.cache.LoadingCache;
@@ -35,7 +34,6 @@ import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static app.finwave.backend.jooq.Tables.TRANSACTIONS;
 
@@ -43,47 +41,47 @@ import static app.finwave.backend.jooq.Tables.TRANSACTIONS;
 public class AnalyticsManager {
     protected CachingConfig cachingConfig;
     protected AnalyticsDatabase database;
-    protected TransactionTagDatabase tagDatabase;
+    protected CategoryDatabase categoryDatabase;
 
-    protected TagManagementManager tagManagementManager;
+    protected CategoryBudgetManager categoryBudgetManager;
 
     protected LoadingCache<Pair<Integer, TransactionsFilter>, AnalyticsByDays> daysCache;
     protected LoadingCache<Pair<Integer, TransactionsFilter>, AnalyticsByMonths> monthsCache;
 
-    protected LoadingCache<Pair<Integer, OffsetDateTime>, List<TagSummaryWithManagement>> tagSummariesCache;
-    protected Cache<Integer, HashSet<OffsetDateTime>> loadedTagSummaries;
+    protected LoadingCache<Pair<Integer, OffsetDateTime>, List<CategorySummaryWithBudget>> categoriesSummariesCache;
+    protected Cache<Integer, HashSet<OffsetDateTime>> loadedCategoriesSummaries;
 
     protected Cache<Integer, HashSet<TransactionsFilter>> loadedDays;
     protected Cache<Integer, HashSet<TransactionsFilter>> loadedMonths;
 
     @Inject
-    public AnalyticsManager(DatabaseWorker databaseWorker, Configs configs, TransactionsManager transactionsManager, TagManagementManager tagManagementManager) {
+    public AnalyticsManager(DatabaseWorker databaseWorker, Configs configs, TransactionsManager transactionsManager, CategoryBudgetManager categoryBudgetManager) {
         this.database = databaseWorker.get(AnalyticsDatabase.class);
-        this.tagDatabase = databaseWorker.get(TransactionTagDatabase.class);
+        this.categoryDatabase = databaseWorker.get(CategoryDatabase.class);
 
-        this.tagManagementManager = tagManagementManager;
+        this.categoryBudgetManager = categoryBudgetManager;
 
         this.cachingConfig = configs.getState(new CachingConfig());
 
-        this.loadedTagSummaries = CacheHandyBuilder.cache(
+        this.loadedCategoriesSummaries = CacheHandyBuilder.cache(
                 1, TimeUnit.DAYS,
                 cachingConfig.analytics.maxDaysEntries
         );
 
-        this.tagSummariesCache = CacheHandyBuilder.loading(
+        this.categoriesSummariesCache = CacheHandyBuilder.loading(
                 1, TimeUnit.DAYS,
-                cachingConfig.analytics.maxTagSummingEntries,
+                cachingConfig.analytics.maxCategoriesSummingEntries,
                 (p) -> {
                     try {
-                        loadedTagSummaries.get(p.getLeft(), HashSet::new).add(p.getRight());
+                        loadedCategoriesSummaries.get(p.getLeft(), HashSet::new).add(p.getRight());
                     } catch (ExecutionException e) {
                         e.printStackTrace();
                     }
 
-                    return calculateTagSummary(p.getLeft(), p.getRight());
+                    return calculateCategoriesSummary(p.getLeft(), p.getRight());
                 },
                 (entry) -> {
-                    HashSet<OffsetDateTime> loaded = loadedTagSummaries.getIfPresent(entry.getKey().getLeft());
+                    HashSet<OffsetDateTime> loaded = loadedCategoriesSummaries.getIfPresent(entry.getKey().getLeft());
                     if (loaded == null)
                         return;
 
@@ -137,7 +135,7 @@ public class AnalyticsManager {
                 (entry) -> {
                     int userId = entry.getKey().getLeft();
 
-                    tagSummariesCache.invalidate(userId);
+                    categoriesSummariesCache.invalidate(userId);
 
                     HashSet<TransactionsFilter> loaded = loadedMonths.getIfPresent(userId);
                     if (loaded == null)
@@ -151,16 +149,16 @@ public class AnalyticsManager {
         transactionsManager.getRecurringActionsWorker().addHook(new Hook<>(this));
         transactionsManager.getAccumulationActionsWorker().addHook(new Hook<>(this));
 
-        tagManagementManager.addInvalidationListener((userId) -> {
-            HashSet<OffsetDateTime> loaded = loadedTagSummaries.getIfPresent(userId);
+        categoryBudgetManager.addInvalidationListener((userId) -> {
+            HashSet<OffsetDateTime> loaded = loadedCategoriesSummaries.getIfPresent(userId);
 
             if (loaded == null)
                 return;
 
-            loadedTagSummaries.invalidate(userId);
+            loadedCategoriesSummaries.invalidate(userId);
             loaded.stream()
                     .map((d) -> Pair.of(userId, d))
-                    .forEach(tagSummariesCache::invalidate);
+                    .forEach(categoriesSummariesCache::invalidate);
 
         });
     }
@@ -190,16 +188,16 @@ public class AnalyticsManager {
         );
     }
 
-    protected List<TagSummaryWithManagement> calculateTagSummary(int userId, OffsetDateTime referenceDate) {
-        List<TransactionsTagsManagementRecord> settings = tagManagementManager.getSettings(userId);
+    protected List<CategorySummaryWithBudget> calculateCategoriesSummary(int userId, OffsetDateTime referenceDate) {
+        List<CategoriesBudgetsRecord> settings = categoryBudgetManager.getSettings(userId);
 
-        HashSet<Long> tags = new HashSet<>();
+        HashSet<Long> categories = new HashSet<>();
         HashSet<Long> currencies = new HashSet<>();
 
         short maxType = 0;
 
-        for (TransactionsTagsManagementRecord record : settings) {
-            tags.add(record.getTagId());
+        for (CategoriesBudgetsRecord record : settings) {
+            categories.add(record.getCategoryId());
             currencies.add(record.getCurrencyId());
 
             maxType = (short) Math.max(maxType, record.getDateType());
@@ -207,19 +205,19 @@ public class AnalyticsManager {
 
         Pair<OffsetDateTime, OffsetDateTime> dateRange = dateTypeToRange(maxType, referenceDate);
 
-        HashSet<Long> tagsToRequest = new HashSet<>(tags);
+        HashSet<Long> categoriesToRequest = new HashSet<>(categories);
         HashMap<Long, ArrayList<Long>> parentToChildren = new HashMap<>();
 
-        List<TransactionsTagsRecord> userTags = tagDatabase.getTags(userId);
+        List<CategoriesRecord> usersCategories = categoryDatabase.getCategories(userId);
 
-        userTags.forEach(t -> {
-            TagTree tree = TagTree.of(t.getParentsTree());
+        usersCategories.forEach(t -> {
+            BudgetTree tree = BudgetTree.of(t.getParentsTree());
 
-            for (Long tagId : tags) {
-                if (tree.contains(tagId)) {
-                    tagsToRequest.add(t.getId());
+            for (Long categoryId : categories) {
+                if (tree.contains(categoryId)) {
+                    categoriesToRequest.add(t.getId());
 
-                    ArrayList<Long> children = parentToChildren.computeIfAbsent(tagId, k -> new ArrayList<>());
+                    ArrayList<Long> children = parentToChildren.computeIfAbsent(categoryId, k -> new ArrayList<>());
 
                     children.add(t.getId());
 
@@ -229,7 +227,7 @@ public class AnalyticsManager {
         });
 
         TransactionsFilter filter = new TransactionsFilter(
-                tagsToRequest.stream().toList(), null,
+                categoriesToRequest.stream().toList(), null,
                 currencies.stream().toList(),
                 dateRange.getLeft(),
                 dateRange.getRight(),
@@ -237,39 +235,39 @@ public class AnalyticsManager {
         );
 
         AnalyticsByMonths analyticsResult = getAnalyticsByMonths(userId, filter);
-        List<TagSummary> merged = analyticsResult.mergeAll();
-        Map<LocalDate, List<TagSummary>> analytics = analyticsResult.getTotal();
+        List<CategorySummary> merged = analyticsResult.mergeAll();
+        Map<LocalDate, List<CategorySummary>> analytics = analyticsResult.getTotal();
 
-        ArrayList<TagSummaryWithManagement> result = new ArrayList<>();
+        ArrayList<CategorySummaryWithBudget> result = new ArrayList<>();
 
         LocalDate date = referenceDate.toLocalDate().withDayOfMonth(1);
 
-        for (TransactionsTagsManagementRecord record : settings) {
+        for (CategoriesBudgetsRecord record : settings) {
             BigDecimal amount = BigDecimal.ZERO;
             long currencyId = record.getCurrencyId();
-            long tagId = record.getTagId();
+            long categoryId = record.getCategoryId();
             short dateType = record.getDateType();
 
-            List<TagSummary> entries = Optional.ofNullable(dateType == 0 ? analytics.get(date) : merged).orElse(List.of());
+            List<CategorySummary> entries = Optional.ofNullable(dateType == 0 ? analytics.get(date) : merged).orElse(List.of());
             List<BigDecimal> toAdd = entries
                     .stream()
                     .filter((e) -> e.currencyId() == currencyId &&
-                            (e.tagId() == tagId || parentToChildren.getOrDefault(tagId, new ArrayList<>()).contains(e.tagId())))
-                    .map(TagSummary::delta)
+                            (e.categoryId() == categoryId || parentToChildren.getOrDefault(categoryId, new ArrayList<>()).contains(e.categoryId())))
+                    .map(CategorySummary::delta)
                     .toList();
 
             for (BigDecimal decimal : toAdd)
                 amount = amount.add(decimal);
 
-            result.add(new TagSummaryWithManagement(currencyId, tagId, record.getId(), amount));
+            result.add(new CategorySummaryWithBudget(currencyId, categoryId, record.getId(), amount));
         }
 
         return Collections.unmodifiableList(result);
     }
 
-    public List<TagSummaryWithManagement> getTagsAnalytics(int userId, OffsetDateTime referenceDate) {
+    public List<CategorySummaryWithBudget> getCategoriesAnalytics(int userId, OffsetDateTime referenceDate) {
         try {
-            return tagSummariesCache.get(Pair.of(userId, referenceDate));
+            return categoriesSummariesCache.get(Pair.of(userId, referenceDate));
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
@@ -329,15 +327,15 @@ public class AnalyticsManager {
                 manager.loadedMonths.invalidate(userId);
             }
 
-           var tags = manager.loadedTagSummaries.getIfPresent(userId);
+           var categories = manager.loadedCategoriesSummaries.getIfPresent(userId);
 
-            if (tags != null) {
-                manager.tagSummariesCache.invalidateAll(
-                        tags.stream()
+            if (categories != null) {
+                manager.categoriesSummariesCache.invalidateAll(
+                        categories.stream()
                         .map((d) -> Pair.of(userId, d))
                         .toList());
 
-                manager.loadedTagSummaries.invalidate(userId);
+                manager.loadedCategoriesSummaries.invalidate(userId);
             }
         }
 

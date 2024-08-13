@@ -1,6 +1,6 @@
 package app.finwave.backend.service.recurring;
 
-import app.finwave.backend.api.transaction.recurring.RepeatType;
+import app.finwave.backend.api.recurring.RepeatType;
 
 import java.time.OffsetDateTime;
 

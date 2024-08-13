@@ -34,7 +34,7 @@ public class DefaultActionsWorker extends TransactionActionsWorker<TransactionNe
 
         Optional<Long> transactionId = database.applyTransaction(
                 newRecord.userId(),
-                newRecord.tagId(),
+                newRecord.categoryId(),
                 newRecord.accountId(),
                 currencyId,
                 newRecord.created(),
@@ -73,7 +73,7 @@ public class DefaultActionsWorker extends TransactionActionsWorker<TransactionNe
         if (currencyId.isEmpty())
             throw new RuntimeException("Failed to get currency id and modify account");
 
-        database.editTransaction(record.get(TRANSACTIONS.ID), editRecord.tagId(), editRecord.accountId(), currencyId.get(), editRecord.created(), editRecord.delta(), editRecord.description());
+        database.editTransaction(record.get(TRANSACTIONS.ID), editRecord.categoryId(), editRecord.accountId(), currencyId.get(), editRecord.created(), editRecord.delta(), editRecord.description());
     }
 
     @Override

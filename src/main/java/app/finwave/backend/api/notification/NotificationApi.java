@@ -90,7 +90,7 @@ public class NotificationApi {
         if (pointId.isEmpty())
             halt(500);
 
-        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notificationPoints"));
 
         response.status(200);
 
@@ -122,7 +122,7 @@ public class NotificationApi {
 
         database.editNotificationPointDescription(pointId, description);
 
-        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notificationPoints"));
 
         response.status(200);
 
@@ -144,7 +144,7 @@ public class NotificationApi {
 
         database.editNotificationPointPrimary(pointId, isPrimary);
 
-        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notificationPoints"));
 
         response.status(200);
 
@@ -161,7 +161,7 @@ public class NotificationApi {
 
         database.deleteNotificationPoint(pointId);
 
-        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notification points"));
+        socketWorker.sendToUser(sessionRecord.getUserId(), new NotifyUpdate("notificationPoints"));
 
         response.status(200);
 
