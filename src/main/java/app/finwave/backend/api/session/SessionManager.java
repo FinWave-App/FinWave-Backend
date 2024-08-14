@@ -67,7 +67,7 @@ public class SessionManager {
         return Optional.empty();
     }
 
-    public Optional<String> newSession(int userId, int lifetimeDays, String description, boolean limited) {
+    public Optional<UsersSessionsRecord> newSession(int userId, int lifetimeDays, String description, boolean limited) {
         String token = generateSessionToken();
 
         Optional<UsersSessionsRecord> record = database.newSession(userId, token, lifetimeDays, description, limited);
@@ -78,7 +78,7 @@ public class SessionManager {
         listCache.invalidate(userId);
         tokenCache.put(token, record);
 
-        return Optional.of(token);
+        return record;
     }
 
     public List<UsersSessionsRecord> getSessions(int userId) {

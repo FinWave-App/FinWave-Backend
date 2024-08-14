@@ -40,11 +40,13 @@ public class AiApi {
         this.filesManager = filesManager;
     }
 
-    public boolean enabled() {
-        return config.enabled;
-    }
-
     public Object newContext(Request request, Response response) {
+        if (!config.enabled) {
+            response.status(400);
+
+            return ApiMessage.of("AI disabled");
+        }
+
         UsersSessionsRecord sessionRecord = request.attribute("session");
 
         Optional<String> additionalSystemMessage = ParamsValidator
@@ -63,6 +65,12 @@ public class AiApi {
     }
 
     public Object attachFile(Request request, Response response) {
+        if (!config.enabled) {
+            response.status(400);
+
+            return ApiMessage.of("AI disabled");
+        }
+
         UsersSessionsRecord sessionRecord = request.attribute("session");
 
         long contextId = ParamsValidator
@@ -88,10 +96,16 @@ public class AiApi {
     }
 
     public Object ask(Request request, Response response) {
+        if (!config.enabled) {
+            response.status(400);
+
+            return ApiMessage.of("AI disabled");
+        }
+
         UsersSessionsRecord sessionRecord = request.attribute("session");
 
         long contextId = ParamsValidator
-                .integer(request, "contextId")
+                .longV(request, "contextId")
                 .matches((id) -> manager.userOwnContext(sessionRecord.getUserId(), id))
                 .require();
 

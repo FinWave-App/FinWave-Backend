@@ -236,13 +236,11 @@ public class HttpWorker {
                 post("/push", notificationApi::pushNotification);
             });
 
-            if (aiApi.enabled()) {
-                path("/ai", () -> {
-                    post("/newContext", aiApi::newContext);
-                    post("/attachFile", aiApi::attachFile);
-                    post("/ask", aiApi::ask);
-                });
-            }
+            path("/ai", () -> {
+                post("/newContext", aiApi::newContext);
+                post("/attachFile", aiApi::attachFile);
+                post("/ask", aiApi::ask);
+            });
         });
 
         path("/auth", () -> {

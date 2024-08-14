@@ -99,12 +99,12 @@ public class AuthApi {
         if (config.demoMode && usersRecord.get().getId() == 1)
             halt(401);
 
-        Optional<String> token = sessionManager.newSession(usersRecord.get().getId(), config.userSessionsLifetimeDays, description.orElse(null), false);
+        Optional<UsersSessionsRecord> session = sessionManager.newSession(usersRecord.get().getId(), config.userSessionsLifetimeDays, description.orElse(null), false);
 
-        if (token.isEmpty())
+        if (session.isEmpty())
             halt(500);
 
-        return new LoginResponse(token.get(), config.userSessionsLifetimeDays);
+        return new LoginResponse(session.get().getToken(), config.userSessionsLifetimeDays);
     }
 
     static class LoginResponse extends ApiResponse {

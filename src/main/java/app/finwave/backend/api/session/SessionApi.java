@@ -7,7 +7,6 @@ import spark.Response;
 import app.finwave.backend.api.ApiResponse;
 import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.general.UserConfig;
-import app.finwave.backend.database.DatabaseWorker;
 import app.finwave.backend.http.ApiMessage;
 import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
 import app.finwave.backend.utils.params.ParamsValidator;
@@ -16,7 +15,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static app.finwave.backend.utils.TokenGenerator.generateSessionToken;
 import static spark.Spark.halt;
 
 @Singleton
@@ -49,14 +47,14 @@ public class SessionApi {
                 .length(1, config.maxSessionDescriptionLength)
                 .optional();
 
-        Optional<String> token = manager.newSession(sessionRecord.getUserId(), lifetimeDays, description.orElse(null), true);
+        Optional<UsersSessionsRecord> newSession = manager.newSession(sessionRecord.getUserId(), lifetimeDays, description.orElse(null), true);
 
-        if (token.isEmpty())
+        if (newSession.isEmpty())
             halt(500);
 
         response.status(200);
 
-        return new NewSessionResponse(token.get());
+        return new NewSessionResponse(newSession.get().getToken(), newSession.get().getId());
     }
 
     public Object getSessions(Request request, Response response) {
@@ -112,9 +110,11 @@ public class SessionApi {
 
     static class NewSessionResponse extends ApiResponse {
         public final String token;
+        public final long sessionId;
 
-        public NewSessionResponse(String token) {
+        public NewSessionResponse(String token, long sessionId) {
             this.token = token;
+            this.sessionId = sessionId;
         }
     }
 }
