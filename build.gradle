@@ -7,7 +7,7 @@ plugins {
 
 group 'app.finwave.backend'
 
-version = '1.0.1'
+version = '1.1.0'
 mainClassName = group + ".Main"
 archivesBaseName = 'FinWave'
 
@@ -40,6 +40,7 @@ dependencies {
     implementation 'org.jooq:jooq-postgres-extensions:3.18.3'
 
     implementation 'io.github.stefanbratanov:jvm-openai:0.10.0'
+    implementation group: 'net.sourceforge.tess4j', name: 'tess4j', version: '5.12.0'
 
     implementation 'com.google.inject:guice:5.1.0'
     implementation 'com.google.code.gson:gson:2.10.1'
@@ -55,8 +56,8 @@ dependencies {
 
     implementation 'nl.martijndwars:web-push:5.1.1'
 
-    implementation 'org.apache.pdfbox:pdfbox:2.0.27'
-    implementation 'org.apache.pdfbox:pdfbox-tools:2.0.27'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.3'
+    implementation 'org.apache.pdfbox:pdfbox-tools:3.0.3'
 
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
 

@@ -2,6 +2,8 @@ package app.finwave.backend.logging;
 
 import org.slf4j.ILoggerFactory;
 import org.slf4j.IMarkerFactory;
+import org.slf4j.helpers.BasicMDCAdapter;
+import org.slf4j.helpers.BasicMarkerFactory;
 import org.slf4j.spi.MDCAdapter;
 import org.slf4j.spi.SLF4JServiceProvider;
 
@@ -15,12 +17,12 @@ public class SLF4JProvider implements SLF4JServiceProvider {
 
     @Override
     public IMarkerFactory getMarkerFactory() {
-        return null;
+        return new BasicMarkerFactory();
     }
 
     @Override
     public MDCAdapter getMDCAdapter() {
-        return null;
+        return new BasicMDCAdapter();
     }
 
     @Override

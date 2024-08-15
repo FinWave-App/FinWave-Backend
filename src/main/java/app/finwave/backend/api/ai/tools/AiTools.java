@@ -114,10 +114,10 @@ public class AiTools {
                 Parameter.of("description", "string", "Filter by description", false)
         );
 
-        function("new_transaction", "Create a new transaction", transactionApi::newTransaction,
+        function("new_transaction", "Create a new transaction.", transactionApi::newTransaction,
                 Parameter.of("categoryId", "integer", "One of user's category id", true),
                 Parameter.of("accountId", "integer", "One of user's accounts id", true),
-                Parameter.of("delta", "number", "Transaction delta", true),
+                Parameter.of("delta", "number", "Transaction delta. Sign must be like category type", true),
                 Parameter.of("description", "string", false)
         );
 
@@ -125,8 +125,8 @@ public class AiTools {
                 Parameter.of("categoryId", "integer", "One of user's category id", true),
                 Parameter.of("fromAccountId", "integer", "User's account id from which the amount should be debited", true),
                 Parameter.of("toAccountId", "integer", "User's account id where the amount should be credited", true),
-                Parameter.of("fromDelta", "number", "The delta that will be debited", true),
-                Parameter.of("toDelta", "number", "Amount to be credited", true),
+                Parameter.of("fromDelta", "number", "The delta that will be debited. Must be negative", true),
+                Parameter.of("toDelta", "number", "Amount to be credited. Must be positive", true),
                 Parameter.of("description", "string", false)
         );
 
@@ -134,7 +134,7 @@ public class AiTools {
                 Parameter.of("transactionId", "integer", "Exists transaction id", true),
                 Parameter.of("categoryId", "integer", "One of user's category id", true),
                 Parameter.of("accountId", "integer", "One of user's accounts id", true),
-                Parameter.of("delta", "number", "Transaction delta", true),
+                Parameter.of("delta", "number", "Transaction delta. Sign must be like category type", true),
                 Parameter.of("description", "string", false)
         );
 
@@ -149,7 +149,7 @@ public class AiTools {
                 Parameter.of("description", "string", false)
         );
 
-        function("get_categories", "Get all user's transaction categories", categoryApi::getCategories);
+        function("get_categories", "Get all user's transaction categories. Tip: type of category means expanse (-1), mix (0) or income (1)", categoryApi::getCategories);
 
         function("edit_category_type", "Edit category's type (expanse, mixed or income)", categoryApi::editCategoryType,
                 Parameter.of("categoryId", "integer", "One of user's categories id", true),
@@ -179,7 +179,7 @@ public class AiTools {
                 Parameter.of("repeatType", "integer", "Repeat type", true),
                 Parameter.of("repeatArg", "integer", "Repeat argument", true),
                 Parameter.of("notificationMode", "integer", "Notification mode", true),
-                Parameter.of("delta", "number", "Transaction delta", true),
+                Parameter.of("delta", "number", "Transaction delta. Sign must be like category type", true),
                 Parameter.of("description", "string", "Description of the transaction", false)
         );
 
@@ -191,7 +191,7 @@ public class AiTools {
                 Parameter.of("repeatType", "integer", "Repeat type", true),
                 Parameter.of("repeatArg", "integer", "Repeat argument", true),
                 Parameter.of("notificationMode", "integer", "Notification mode", true),
-                Parameter.of("delta", "number", "Transaction delta", true),
+                Parameter.of("delta", "number", "Transaction delta. Sign must be like category type", true),
                 Parameter.of("description", "string", "Description of the transaction", false)
         );
 

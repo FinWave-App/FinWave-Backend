@@ -16,12 +16,12 @@ public record BulkTransactionsRecord(List<Entry> entries) {
     }
 
     public static class Entry {
-        public final short type; // 0 - default transaction, 1 - internal
-        public final long categoryId;
-        public final long accountId;
-        public final OffsetDateTime created;
-        public final BigDecimal delta;
-        public final String description;
+        public short type; // 0 - default transaction, 1 - internal
+        public long categoryId;
+        public long accountId;
+        public OffsetDateTime created;
+        public BigDecimal delta;
+        public String description;
 
 
         // for internal records

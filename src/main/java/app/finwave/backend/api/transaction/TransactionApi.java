@@ -3,6 +3,7 @@ package app.finwave.backend.api.transaction;
 import app.finwave.backend.api.category.CategoryDatabase;
 import app.finwave.backend.api.event.WebSocketWorker;
 import app.finwave.backend.api.event.messages.response.NotifyUpdate;
+import app.finwave.backend.jooq.tables.records.CategoriesRecord;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -28,6 +29,8 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import static spark.Spark.halt;
 
 @Singleton
 public class TransactionApi {
@@ -66,8 +69,17 @@ public class TransactionApi {
 
             validator.require();
 
-            if (entry.type == 0)
+            if (entry.type == 0) {
+                Optional<CategoriesRecord> category = categoryDatabase.getCategory(entry.categoryId);
+
+                if (category.isEmpty())
+                    halt(500);
+
+                if (category.get().getType() != 0 && entry.delta.signum() != category.get().getType())
+                    entry.delta = entry.delta.negate();
+
                 return;
+            }
 
             validator
                     .matches((e) -> accountDatabase.userOwnAccount(sessionsRecord.getUserId(), e.toAccountId), "toAccountId")
@@ -180,6 +192,15 @@ public class TransactionApi {
                 .length(1, config.maxDescriptionLength)
                 .optional();
 
+        Optional<CategoriesRecord> category = categoryDatabase.getCategory(categoryId);
+
+        if (category.isEmpty())
+            halt(500);
+
+        if (category.get().getType() != 0 && delta.signum() != category.get().getType())
+            delta = delta.negate();
+
+
         long transactionId = manager.applyTransaction(new TransactionNewRecord(
                 sessionsRecord.getUserId(),
                 categoryId,
@@ -245,6 +266,14 @@ public class TransactionApi {
                 .string(request, "description")
                 .length(1, config.maxDescriptionLength)
                 .optional();
+
+        Optional<CategoriesRecord> category = categoryDatabase.getCategory(categoryId);
+
+        if (category.isEmpty())
+            halt(500);
+
+        if (category.get().getType() != 0 && delta.signum() != category.get().getType())
+            delta = delta.negate();
 
         manager.editTransaction(transactionId, new TransactionEditRecord(categoryId, accountId, time, delta, description.orElse(null)));
 

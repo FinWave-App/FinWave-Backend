@@ -58,6 +58,12 @@ public class CategoryDatabase extends AbstractDatabase {
                 .isPresent();
     }
 
+    public Optional<CategoriesRecord> getCategory(long categoryId) {
+        return context.selectFrom(CATEGORIES)
+                .where(CATEGORIES.ID.eq(categoryId))
+                .fetchOptional();
+    }
+
     public int getCategoriesCount(int userId) {
         return context.selectCount()
                 .from(CATEGORIES)

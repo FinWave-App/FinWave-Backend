@@ -5,6 +5,8 @@ import app.finwave.backend.api.ai.tools.AiTools;
 import app.finwave.backend.api.ai.tools.ArrayDeserializer;
 import app.finwave.backend.api.ApiResponse;
 import app.finwave.backend.api.ai.tools.ChatMessagesBuilder;
+import app.finwave.backend.api.event.WebSocketWorker;
+import app.finwave.backend.api.event.messages.response.AiInternalContextUpdate;
 import app.finwave.backend.api.files.FilesManager;
 import app.finwave.backend.api.files.LimitedWithCallbackOutputStream;
 import app.finwave.backend.config.Configs;
@@ -37,6 +39,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import static app.finwave.backend.api.ai.tools.ContentPartParser.contentToJson;
 import static app.finwave.backend.api.ai.tools.ContentPartParser.jsonToContent;
@@ -52,14 +55,12 @@ public class AiWorker {
     protected OpenAI ai;
     protected AiManager manager;
 
-    protected FilesManager filesManager;
-
-    protected String filesApiRoute = System.getenv("API_URL") + "files/download";
+    protected WebSocketWorker webSocketWorker;
 
     @Inject
-    public AiWorker(Configs configs, AiManager manager, FilesManager filesManager, AiTools aiTools) {
+    public AiWorker(Configs configs, AiManager manager, AiTools aiTools, WebSocketWorker webSocketWorker) {
         this.config = configs.getState(new AiConfig());
-        this.filesManager = filesManager;
+        this.webSocketWorker = webSocketWorker;
 
         if (!config.enabled)
             return;
@@ -157,7 +158,7 @@ public class AiWorker {
         return result;
     }
 
-    protected String ask(long contextId, UsersSessionsRecord session) {
+    protected String ask(long contextId, int userId, UsersSessionsRecord session) {
         List<AiMessagesRecord> messages = manager.getMessages(contextId);
         List<ToolCall> undoneRequests = checkUndoneRequests(messages);
 
@@ -181,8 +182,16 @@ public class AiWorker {
         if (!result)
             return null;
 
-        if (message.toolCalls() != null && runTools(message.toolCalls(), contextId, session))
-            return ask(contextId, session);
+        if (message.toolCalls() != null && runTools(message.toolCalls(), contextId, session)) {
+            if (message.content() != null)
+                try {
+                    webSocketWorker.sendToUser(userId, new AiInternalContextUpdate(contextId, message.content(), "assistant")).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+
+            return ask(contextId, userId, session);
+        }
 
         return message.content();
     }
@@ -193,7 +202,7 @@ public class AiWorker {
         if (contentParts != null && !contentParts.isEmpty())
             pushMessage(contextId, "user", contentParts);
 
-        return ask(contextId, session);
+        return ask(contextId, session.getUserId(), session);
     }
 
     public boolean pushMessage(long contextId, String role, List<ContentPart> contentParts) {
@@ -201,177 +210,6 @@ public class AiWorker {
                 contentToJson(contentParts.stream().map(c -> (Object) c).toList()),
                 null
         );
-    }
-
-    public boolean attachFiles(long contextId, List<FilesRecord> files) {
-        boolean result = false;
-
-        for (FilesRecord record : files) {
-            String mime = record.getMimeType();
-
-            boolean notExactly = false;
-
-            result = switch (mime) {
-                case "image/jpeg", "image/png", "image/gif", "image/webp" -> attachImages(List.of(record), contextId);
-                case "application/pdf" -> attachPDFs(List.of(record), contextId);
-                default -> {
-                    notExactly = true;
-
-                    yield false;
-                }
-            };
-
-            if (notExactly) {
-                String geneticType = mime.split("/")[0];
-
-                if (geneticType.equals("text"))
-                    result = attachTexts(List.of(record), contextId);
-            }
-
-            if (!result)
-                return false;
-        }
-
-        return result;
-    }
-
-    protected boolean sizeValid(List<FilesRecord> files) {
-        long sizeSum = 0;
-
-        for (FilesRecord file : files) {
-            sizeSum += file.getSize();
-
-            if (sizeSum > config.maxFilesSizeSumPerAttachmentKiB * 1024L)
-                return false;
-        }
-
-        return true;
-    }
-
-    protected boolean attachPDFs(List<FilesRecord> files, long contextId) {
-        ArrayList<FilesRecord> images = new ArrayList<>();
-        ArrayList<FilesRecord> texts = new ArrayList<>();
-
-        for (FilesRecord record : files) {
-            Optional<File> optionalFile = filesManager.getFile(record);
-
-            if (optionalFile.isEmpty())
-                return false;
-
-            try (PDDocument document = PDDocument.load(optionalFile.get())) {
-                PDFTextStripper pdfStripper = new PDFTextStripper();
-                PDFRenderer renderer = new PDFRenderer(document);
-
-                for (int page = 0; page < document.getNumberOfPages(); ++page) {
-                    BufferedImage image = renderer.renderImageWithDPI(page, 300, ImageType.RGB);
-
-                    Optional<LimitedWithCallbackOutputStream> streamOptional = filesManager.registerAndOpenStream(record.getOwnerId(),
-                            record.getCreatedAt(), record.getExpiresAt(), record.getIsPublic(),
-                            "aiFileConverter", "image/png", record.getName() + " #" + (page + 1), record.getDescription()
-                    );
-
-                    if (streamOptional.isEmpty())
-                        return false;
-
-                    LimitedWithCallbackOutputStream stream = streamOptional.get();
-                    ImageIO.write(image, "PNG", stream);
-
-                    Optional<String> fileId = filesManager.getRecordFromStream(stream).map(FilesRecord::getId); // get only fileId, because after close stream record change
-                    stream.close();
-
-                    if (fileId.isEmpty())
-                        return false;
-
-                    images.add(filesManager.getFileRecord(fileId.get()).orElseThrow());
-                }
-
-                String text = pdfStripper.getText(document);
-
-                if (text != null && !text.isBlank()) {
-                    Optional<LimitedWithCallbackOutputStream> streamOptional = filesManager.registerAndOpenStream(record.getOwnerId(),
-                            record.getCreatedAt(), record.getExpiresAt(), record.getIsPublic(),
-                            "aiFileConverter", "text/plain", record.getName() + " [plain text]", record.getDescription()
-                    );
-
-                    if (streamOptional.isEmpty())
-                        return false;
-
-                    LimitedWithCallbackOutputStream stream = streamOptional.get();
-
-                    Writer writer = new OutputStreamWriter(stream);
-                    BufferedWriter bufferedWriter = new BufferedWriter(writer);
-
-                    bufferedWriter.write(text);
-
-                    Optional<String> fileId = filesManager.getRecordFromStream(stream).map(FilesRecord::getId);  // get only fileId, because after close stream record change
-
-                    bufferedWriter.flush();
-                    bufferedWriter.close();
-
-                    if (fileId.isEmpty())
-                        return false;
-
-                    texts.add(filesManager.getFileRecord(fileId.get()).orElseThrow());
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-
-                return false;
-            }
-        }
-
-        boolean result = attachImages(images, contextId);
-
-        if (!result)
-            return false;
-
-        result = attachTexts(texts, contextId);
-
-        return result;
-    }
-
-    protected boolean attachTexts(List<FilesRecord> files, long contextId) {
-        if (!sizeValid(files))
-            return false;
-
-        for (FilesRecord record : files) {
-            Optional<File> fileOptional = filesManager.getFile(record);
-
-            if (fileOptional.isEmpty())
-                return false;
-
-            String data;
-
-            try {
-                data = config.fileAttachmentTip.replace("{_CONTENT_}", Files.readString(fileOptional.get().toPath()));
-            } catch (IOException e) {
-                return false;
-            }
-
-            boolean result = pushMessage(contextId, "system", List.of(
-                    ContentPart.textContentPart(data)
-            ));
-
-            if (!result)
-                return false;
-        }
-
-        return true;
-    }
-
-    protected boolean attachImages(List<FilesRecord> files, long contextId) {
-        if (!sizeValid(files))
-            return false;
-
-        List<ContentPart> parts = files
-                .stream()
-                .map((r) -> filesApiRoute + "?fileId=" + r.getId())
-                .map(ContentPart::imageUrlContentPart)
-                .map((i) -> (ContentPart) i)
-                .toList();
-
-        return pushMessage(contextId, "system", parts);
     }
 
     protected CreateChatCompletionRequest createChatCompletionRequest(boolean includeTools, List<AiMessagesRecord> messages) {

@@ -30,14 +30,16 @@ public class AiApi {
     protected AiManager manager;
     protected AiConfig config;
     protected FilesManager filesManager;
+    protected AiFileWorker aiFileWorker;
 
     @Inject
-    public AiApi(AiWorker worker, AiManager manager, FilesManager filesManager, Configs configs) {
+    public AiApi(AiWorker worker, AiFileWorker aiFileWorker, AiManager manager, FilesManager filesManager, Configs configs) {
         this.worker = worker;
         this.manager = manager;
         this.config = configs.getState(new AiConfig());
 
         this.filesManager = filesManager;
+        this.aiFileWorker = aiFileWorker;
     }
 
     public Object newContext(Request request, Response response) {
@@ -85,7 +87,7 @@ public class AiApi {
 
         FilesRecord record = filesManager.getFileRecord(fileId).orElseThrow();
 
-        boolean result = worker.attachFiles(contextId, List.of(record));
+        boolean result = aiFileWorker.attachFiles(contextId, List.of(record));
 
         if (!result)
             throw new InvalidParameterException("fileId");
