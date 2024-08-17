@@ -1,4 +1,4 @@
-FROM openjdk:17-alpine
+FROM openjdk:17.0.1-jdk-slim
 MAINTAINER isKONSTANTIN <me@knst.su>
 
 EXPOSE 8080
