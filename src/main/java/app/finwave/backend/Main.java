@@ -1,5 +1,8 @@
 package app.finwave.backend;
 
+import app.finwave.backend.config.Configs;
+import app.finwave.backend.config.general.HttpConfig;
+import app.finwave.backend.utils.ProxySetup;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import app.finwave.backend.http.HttpWorker;
@@ -31,6 +34,11 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         LogsInitializer.init();
+
+        HttpConfig.ProxyConfig proxyConfig = INJ.getInstance(Configs.class).getState(new HttpConfig()).outsideProxy;
+
+        if (proxyConfig.enabled)
+            ProxySetup.setup(proxyConfig);
 
         INJ.getInstance(FirstStartupInitializer.class);
         INJ.getInstance(HttpWorker.class);
