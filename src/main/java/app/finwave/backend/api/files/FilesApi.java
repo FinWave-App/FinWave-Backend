@@ -19,6 +19,7 @@ import javax.servlet.http.Part;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemException;
 import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -198,12 +199,12 @@ public class FilesApi {
 
     protected Object verifyAndSend(FilesRecord record, Response response) {
         if (!manager.verify(record))
-            halt(500);
+            throw new RuntimeException("Verification file checksum failed: does not exist or corrupted");
 
         Optional<File> optionalFile = manager.getFile(record);
 
         if (optionalFile.isEmpty())
-            halt(500);
+            throw new RuntimeException("Fail getting file");
 
         File file = optionalFile.get();
 
@@ -220,7 +221,9 @@ public class FilesApi {
                     outputStream.write(buffer, 0, len);
             }
         } catch (Exception e) {
-            halt(500);
+            e.printStackTrace();
+
+            throw new RuntimeException("Fail sending file");
         }
 
         response.status(200);
