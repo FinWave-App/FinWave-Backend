@@ -18,9 +18,13 @@ public class LongValidator extends AbstractValidator<Long> {
         return this;
     }
 
-    public LongValidator matches(Function<Long, Boolean> validator) {
-        if (raw != null && !validator.apply(raw))
+    public LongValidator matches(ValidatorFunc<Long, Boolean> validator) {
+        try {
+            if (raw != null && !validator.apply(raw))
+                invalid();
+        } catch (Exception e) {
             invalid();
+        }
 
         return this;
     }

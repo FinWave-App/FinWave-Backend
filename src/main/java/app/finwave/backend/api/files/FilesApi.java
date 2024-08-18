@@ -17,7 +17,11 @@ import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletException;
 import javax.servlet.http.Part;
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemException;
 import java.security.NoSuchAlgorithmException;
@@ -46,6 +50,97 @@ public class FilesApi {
         response.status(200);
 
         return new AvailableSpaceResponse(used, max - used, max);
+    }
+
+    public Object uploadFromURL(Request request, Response response) {
+        UsersSessionsRecord sessionRecord = request.attribute("session");
+
+        int expiredAfterDays = ParamsValidator
+                .integer(request, "expiredAfterDays")
+                .range(1, config.maxUploadedFilesExpiredDays)
+                .optional()
+                .orElse(config.maxUploadedFilesExpiredDays);
+
+        boolean isPublic = ParamsValidator
+                .string(request, "isPublic")
+                .mapOptional(s -> s.equals("true"))
+                .orElse(false);
+
+        String mime = ParamsValidator
+                .string(request, "mime")
+                .length(3, 255)
+                .matches((s) -> s.contains("/"))
+                .require();
+
+        String name = ParamsValidator
+                .string(request, "name")
+                .length(1, config.maxUploadedFilesName)
+                .require();
+
+        String description = ParamsValidator
+                .string(request, "description")
+                .length(1, config.maxUploadedFilesDescription)
+                .optional()
+                .orElse(null);
+
+        URL url = ParamsValidator
+                .url(request, "url")
+                .protocolAnyMatches("https")
+                .notLocalAddress()
+                .require();
+
+        Optional<FilesRecord> record = manager.registerNewEmptyFile(sessionRecord.getUserId(), expiredAfterDays, isPublic, "webUploadByLink");
+
+        if (record.isEmpty())
+            halt(500);
+
+        LimitedWithCallbackOutputStream stream = null;
+        try {
+            stream = manager.openStream(
+                    record.get(),
+                    mime,
+                    name,
+                    description
+            );
+        } catch (IOException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        if (stream == null)
+            halt(400);
+
+        try (InputStream input = url.openStream()) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+
+            while ((bytesRead = input.read(buffer)) != -1) {
+                stream.write(buffer, 0, bytesRead);
+            }
+        } catch (IOException e) {
+            try {
+                stream.close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+
+            if (e.getMessage().equals("Exceeded max bytes available")) {
+                response.status(400);
+
+                return ApiMessage.of("Exceeded max bytes available");
+            }else {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            stream.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        response.status(200);
+
+        return new FileUploadResponse(record.get().getId());
     }
 
     public Object upload(Request request, Response response) {
@@ -89,7 +184,7 @@ public class FilesApi {
             stream = manager.openStream(
                     record.get(),
                     part.getContentType(),
-                    part.getSubmittedFileName(),
+                    part.getSubmittedFileName().substring(0, config.maxUploadedFilesName),
                     description
             );
         } catch (IOException | NoSuchAlgorithmException e) {

@@ -21,9 +21,13 @@ public class StringValidator extends AbstractValidator<String> {
         return this;
     }
 
-    public StringValidator matches(Function<String, Boolean> validator) {
-        if (raw != null && !validator.apply(raw))
+    public StringValidator matches(ValidatorFunc<String, Boolean> validator) {
+        try {
+            if (raw != null && !validator.apply(raw))
+                invalid();
+        } catch (Exception e) {
             invalid();
+        }
 
         return this;
     }

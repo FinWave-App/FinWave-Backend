@@ -35,7 +35,7 @@ public abstract class AbstractValidator<T> {
         return raw;
     }
 
-    public <X> X map(Function<T, X> mapper) {
+    public <X> X map(ValidatorFunc<T, X> mapper) {
         try {
             return mapper.apply(require());
         } catch (Exception e) {
@@ -45,9 +45,15 @@ public abstract class AbstractValidator<T> {
         }
     }
 
-    public <X> Optional<X> mapOptional(Function<T, X> mapper) {
+    public <X> Optional<X> mapOptional(ValidatorFunc<T, X> mapper) {
         try {
-            return optional().map(mapper);
+            return optional().map((x) -> {
+                try {
+                    return mapper.apply(x);
+                } catch (Exception e) {
+                    return null;
+                }
+            });
         } catch (Exception e) {
             return Optional.empty();
         }

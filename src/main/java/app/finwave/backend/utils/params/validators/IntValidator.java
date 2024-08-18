@@ -18,9 +18,13 @@ public class IntValidator extends AbstractValidator<Integer> {
         return this;
     }
 
-    public IntValidator matches(Function<Integer, Boolean> validator) {
-        if (raw != null && !validator.apply(raw))
+    public IntValidator matches(ValidatorFunc<Integer, Boolean> validator) {
+        try {
+            if (raw != null && !validator.apply(raw))
+                invalid();
+        } catch (Exception e) {
             invalid();
+        }
 
         return this;
     }

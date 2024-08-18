@@ -1,11 +1,10 @@
 package app.finwave.backend.utils.params;
 
+import app.finwave.backend.utils.params.validators.*;
 import com.google.gson.JsonSyntaxException;
 import spark.Request;
-import app.finwave.backend.utils.params.validators.BodyValidator;
-import app.finwave.backend.utils.params.validators.IntValidator;
-import app.finwave.backend.utils.params.validators.LongValidator;
-import app.finwave.backend.utils.params.validators.StringValidator;
+
+import java.net.URL;
 
 import static app.finwave.backend.api.ApiResponse.GSON;
 
@@ -60,6 +59,22 @@ public class ParamsValidator {
 
     public static LongValidator longV(Request request, String name) {
         return longV(request.queryParams(name), name);
+    }
+
+    public static URLValidator url(String raw, String name) {
+        URL url = null;
+
+        if (raw != null)
+            try {
+                url = new URL(raw);
+            }catch (Exception ignored) {
+            }
+
+        return new URLValidator(url, name);
+    }
+
+    public static URLValidator url(Request request, String name) {
+        return url(request.queryParams(name), name);
     }
 
     public static <T> BodyValidator<T> bodyObject(Request request, Class<T> tClass) {

@@ -265,6 +265,7 @@ public class HttpWorker {
                 get("/download", filesApi::downloadWithAuth);
 
                 post("/upload", filesApi::upload);
+                post("/uploadFromURL", filesApi::uploadFromURL);
                 post("/delete", filesApi::delete);
                 post("/deleteAll", filesApi::deleteAll);
             });
