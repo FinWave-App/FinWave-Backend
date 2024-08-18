@@ -12,6 +12,9 @@ import app.finwave.backend.api.recurring.RecurringTransactionApi;
 import app.finwave.backend.api.category.CategoryApi;
 import app.finwave.backend.api.budget.CategoryBudgetApi;
 import app.finwave.backend.jooq.tables.records.UsersSessionsRecord;
+import com.ezylang.evalex.EvaluationException;
+import com.ezylang.evalex.Expression;
+import com.ezylang.evalex.parser.ParseException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.github.stefanbratanov.jvm.openai.Function;
@@ -94,6 +97,21 @@ public class AiTools {
     }
 
     protected void buildTools() {
+        function("calculate", "Use this function to calculate math expressions",
+                (FunctionExecutor) (s, args) -> {
+                    try {
+                        return new FunctionGenericResult(new Expression(args.get("expression"))
+                                .evaluate()
+                                .getNumberValue()
+                                .toString()
+                        );
+                    } catch (EvaluationException | ParseException e) {
+                        return new FunctionError("Invalid expression");
+                    }
+                },
+                Parameter.of("expression", "string", "Expression to calculate", true)
+        );
+
         function("get_transactions", "Get user's transactions. Sorted by date, new ones first", transactionApi::getTransactions,
                 Parameter.of("count", "integer", "Count of transaction to fetch", true),
                 Parameter.of("offset", "integer", "Offset. 0 - without it", false),
@@ -360,7 +378,7 @@ public class AiTools {
         );
     }
 
-    protected void function(String name, String description, FunctionApiExecutor executor, Parameter... parameters) {
+    protected void function(String name, String description, FunctionExecutor executor, Parameter... parameters) {
         functionExecutors.put(name, executor);
 
         tools.add(Tool.functionTool(Function.newBuilder()
@@ -369,6 +387,10 @@ public class AiTools {
                 .parameters(wrapParameters(parameters))
                 .build())
         );
+    }
+
+    protected void function(String name, String description, FunctionApiExecutor executor, Parameter... parameters) {
+        function(name, description, (FunctionExecutor) executor, parameters);
     }
 
     protected static Map<String, Object> wrapParameters(Parameter... parameters) {
