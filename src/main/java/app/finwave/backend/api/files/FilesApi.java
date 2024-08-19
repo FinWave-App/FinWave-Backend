@@ -180,11 +180,15 @@ public class FilesApi {
             halt(500);
 
         LimitedWithCallbackOutputStream stream = null;
+
+        String fileName = part.getSubmittedFileName();
+        fileName = fileName.length() > config.maxUploadedFilesName ? fileName.substring(0, config.maxUploadedFilesName) : fileName;
+
         try {
             stream = manager.openStream(
                     record.get(),
                     part.getContentType(),
-                    part.getSubmittedFileName().substring(0, config.maxUploadedFilesName),
+                    fileName,
                     description
             );
         } catch (IOException | NoSuchAlgorithmException e) {
