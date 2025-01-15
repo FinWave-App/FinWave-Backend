@@ -103,6 +103,12 @@ public class AccountDatabase extends AbstractDatabase {
                 .execute();
     }
 
+    public void deleteAccount(long accountId) {
+        context.delete(ACCOUNTS)
+                .where(ACCOUNTS.ID.eq(accountId))
+                .execute();
+    }
+
     public void deltaAccountAmount(long accountId, BigDecimal delta) {
         context.update(ACCOUNTS)
                 .set(ACCOUNTS.AMOUNT, ACCOUNTS.AMOUNT.plus(delta))

@@ -4,6 +4,7 @@ import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import app.finwave.backend.api.accumulation.data.AccumulationData;
 import app.finwave.backend.database.AbstractDatabase;
+import org.jooq.Record1;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,15 @@ public class AccumulationDatabase extends AbstractDatabase {
                 .where(ACCUMULATION_SETTINGS.SOURCE_ACCOUNT_ID.eq(sourceAccountId))
                 .fetchOptional()
                 .map(AccumulationData::fromRecord);
+    }
+
+    public boolean accountAffected(long accountId) {
+        return context.selectCount()
+                .from(ACCUMULATION_SETTINGS)
+                .where(ACCUMULATION_SETTINGS.SOURCE_ACCOUNT_ID.eq(accountId).or(ACCUMULATION_SETTINGS.TARGET_ACCOUNT_ID.eq(accountId)))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElse(0) > 0;
     }
 
 }

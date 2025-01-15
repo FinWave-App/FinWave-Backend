@@ -11,6 +11,8 @@ import app.finwave.backend.config.Configs;
 import app.finwave.backend.config.app.*;
 import app.finwave.backend.config.general.UserConfig;
 
+import java.util.UUID;
+
 @Singleton
 public class ConfigApi {
     protected String authConfigJson;
@@ -33,7 +35,9 @@ public class ConfigApi {
         );
 
         this.authConfigJson = ApiResponse.GSON.toJson(publicConfigs);
-        this.hash = Hashing.sha256().hashUnencodedChars(authConfigJson).toString().substring(0, 4);
+
+        String configHash = UUID.nameUUIDFromBytes(authConfigJson.getBytes()).toString();
+        this.hash = ApiResponse.GSON.toJson(new ConfigsHash(configHash));
     }
 
     public Object getConfigs(Request request, Response response) {
@@ -57,4 +61,7 @@ public class ConfigApi {
                          AiPublic ai) { }
 
     record AiPublic(boolean enabled) {}
+
+    record ConfigsHash(String hash) {
+    }
 }

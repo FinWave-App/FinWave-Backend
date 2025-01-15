@@ -48,10 +48,10 @@ public class AnalyticsApi {
         TransactionsFilter filter = new TransactionsFilter(request);
 
         if (filter.getFromTime() == null)
-            filter.setFromTime(OffsetDateTime.now().minusDays(config.maxTimeRangeDaysForMonths / 2));
+            filter = filter.setFromTime(OffsetDateTime.now().minusDays(config.maxTimeRangeDaysForMonths / 2));
 
         if (filter.getToTime() == null)
-            filter.setToTime(OffsetDateTime.now());
+            filter = filter.setToTime(OffsetDateTime.now());
 
         if (!filter.validateTime(config.maxTimeRangeDaysForMonths))
             throw new InvalidParameterException();

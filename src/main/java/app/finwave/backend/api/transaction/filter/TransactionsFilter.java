@@ -11,14 +11,15 @@ import java.util.Objects;
 public class TransactionsFilter {
     public static final TransactionsFilter EMPTY = new TransactionsFilter();
 
-    protected List<Long> categoriesIds;
-    protected List<Long> accountIds;
-    protected List<Long> currenciesIds;
-    protected OffsetDateTime fromTime;
-    protected OffsetDateTime toTime;
-    protected String description;
+    protected final List<Long> categoriesIds;
+    protected final List<Long> accountIds;
+    protected final List<Long> currenciesIds;
+    protected final OffsetDateTime fromTime;
+    protected final OffsetDateTime toTime;
+    protected final String description;
 
     protected TransactionsFilter() {
+        this((List<Long>) null, null, null, null, null, null);
     }
 
     public TransactionsFilter(List<Long> categoriesIds, List<Long> accountIds, List<Long> currenciesIds, OffsetDateTime fromTime, OffsetDateTime toTime, String description) {
@@ -92,28 +93,28 @@ public class TransactionsFilter {
         return description;
     }
 
-    public void setCategoriesIds(List<Long> categoriesIds) {
-        this.categoriesIds = categoriesIds;
+    public TransactionsFilter setCategoriesIds(List<Long> categoriesIds) {
+        return new TransactionsFilter(categoriesIds, accountIds, currenciesIds, fromTime, toTime, description);
     }
 
-    public void setAccountIds(List<Long> accountIds) {
-        this.accountIds = accountIds;
+    public TransactionsFilter setAccountIds(List<Long> accountIds) {
+        return new TransactionsFilter(categoriesIds, accountIds, currenciesIds, fromTime, toTime, description);
     }
 
-    public void setCurrenciesIds(List<Long> currenciesIds) {
-        this.currenciesIds = currenciesIds;
+    public TransactionsFilter setCurrenciesIds(List<Long> currenciesIds) {
+        return new TransactionsFilter(categoriesIds, accountIds, currenciesIds, fromTime, toTime, description);
     }
 
-    public void setFromTime(OffsetDateTime fromTime) {
-        this.fromTime = fromTime;
+    public TransactionsFilter setFromTime(OffsetDateTime fromTime) {
+        return new TransactionsFilter(categoriesIds, accountIds, currenciesIds, fromTime, toTime, description);
     }
 
-    public void setToTime(OffsetDateTime toTime) {
-        this.toTime = toTime;
+    public TransactionsFilter setToTime(OffsetDateTime toTime) {
+        return new TransactionsFilter(categoriesIds, accountIds, currenciesIds, fromTime, toTime, description);
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public TransactionsFilter setDescription(String description) {
+        return new TransactionsFilter(categoriesIds, accountIds, currenciesIds, fromTime, toTime, description);
     }
 
     @Override

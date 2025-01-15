@@ -85,6 +85,15 @@ public class RecurringTransactionDatabase extends AbstractDatabase {
                 .fetch();
     }
 
+    public boolean accountAffected(long accountId) {
+        return context.selectCount()
+                .from(RECURRING_TRANSACTIONS)
+                .where(RECURRING_TRANSACTIONS.ACCOUNT_ID.eq(accountId))
+                .fetchOptional()
+                .map(Record1::component1)
+                .orElse(0) > 0;
+    }
+
     public boolean userOwnRecurringTransaction(int userId, long id) {
         return context.select(RECURRING_TRANSACTIONS.ID)
                 .from(RECURRING_TRANSACTIONS)

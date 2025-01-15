@@ -175,6 +175,7 @@ public class HttpWorker {
                 post("/editDescription", accountApi::editAccountDescription);
                 post("/editFolder", accountApi::editAccountFolder);
                 post("/hide", accountApi::hideAccount);
+                post("/delete", accountApi::deleteAccount);
                 post("/show", accountApi::showAccount);
             });
 

@@ -1,7 +1,12 @@
 package app.finwave.backend.api.account;
 
+import app.finwave.backend.api.accumulation.AccumulationApi;
+import app.finwave.backend.api.accumulation.AccumulationDatabase;
 import app.finwave.backend.api.event.WebSocketWorker;
 import app.finwave.backend.api.event.messages.response.NotifyUpdate;
+import app.finwave.backend.api.recurring.RecurringTransactionDatabase;
+import app.finwave.backend.api.transaction.filter.TransactionsFilter;
+import app.finwave.backend.api.transaction.manager.TransactionsManager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -33,8 +38,13 @@ public class AccountApi {
 
     protected WebSocketWorker socketWorker;
 
+    protected TransactionsManager transactionsManager;
+
+    protected RecurringTransactionDatabase recurringTransactionDatabase;
+    protected AccumulationDatabase accumulationDatabase;
+
     @Inject
-    public AccountApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker) {
+    public AccountApi(DatabaseWorker databaseWorker, Configs configs, WebSocketWorker socketWorker, TransactionsManager manager) {
         this.database = databaseWorker.get(AccountDatabase.class);
         this.folderDatabase = databaseWorker.get(AccountFolderDatabase.class);
         this.currencyDatabase = databaseWorker.get(CurrencyDatabase.class);
@@ -42,6 +52,9 @@ public class AccountApi {
         this.config = configs.getState(new AccountsConfig());
 
         this.socketWorker = socketWorker;
+        this.transactionsManager = manager;
+        this.recurringTransactionDatabase = databaseWorker.get(RecurringTransactionDatabase.class);
+        this.accumulationDatabase = databaseWorker.get(AccumulationDatabase.class);
     }
 
     public Object newAccount(Request request, Response response) {
@@ -191,6 +204,40 @@ public class AccountApi {
         response.status(200);
 
         return ApiMessage.of("Account folder edited");
+    }
+
+    public Object deleteAccount(Request request, Response response) {
+        UsersSessionsRecord sessionsRecord = request.attribute("session");
+
+        long accountId = ParamsValidator
+                .longV(request, "accountId")
+                .matches((id) -> database.userOwnAccount(sessionsRecord.getUserId(), id))
+                .require();
+
+        if (recurringTransactionDatabase.accountAffected(accountId)) {
+            response.status(400);
+
+            return ApiMessage.of("Some recurring transaction affects to account");
+        }
+
+        if (accumulationDatabase.accountAffected(accountId)) {
+            response.status(400);
+
+            return ApiMessage.of("Some accumulation settings affects to account");
+        }
+
+        if (transactionsManager.getTransactionsCount(sessionsRecord.getUserId(), TransactionsFilter.EMPTY.setAccountIds(List.of(accountId))) > 0) {
+            response.status(400);
+
+            return ApiMessage.of("Some transactions affects to account");
+        }
+
+        database.deleteAccount(accountId);
+        socketWorker.sendToUser(sessionsRecord.getUserId(), new NotifyUpdate("accounts"));
+
+        response.status(200);
+
+        return ApiMessage.of("Account deleted");
     }
 
     static class GetAccountsListResponse extends ApiResponse {
