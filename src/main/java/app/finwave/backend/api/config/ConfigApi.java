@@ -1,7 +1,7 @@
 package app.finwave.backend.api.config;
 
 import app.finwave.backend.config.general.AiConfig;
-import com.google.common.hash.Hashing;
+import app.finwave.backend.config.general.ExchangesConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import spark.Request;
@@ -31,7 +31,8 @@ public class ConfigApi {
                 configs.getState(new AccumulationConfig()),
                 configs.getState(new RecurringTransactionConfig()),
                 configs.getState(new ReportConfig()),
-                new AiPublic(configs.getState(new AiConfig()).enabled)
+                new AiPublic(configs.getState(new AiConfig()).enabled),
+                new ExchangesPublic(configs.getState(new ExchangesConfig()).fawazahmed0Exchanges.enabled)
         );
 
         this.authConfigJson = ApiResponse.GSON.toJson(publicConfigs);
@@ -58,9 +59,12 @@ public class ConfigApi {
                          AccumulationConfig accumulation,
                          RecurringTransactionConfig recurring,
                          ReportConfig reports,
-                         AiPublic ai) { }
+                         AiPublic ai,
+                         ExchangesPublic exchanges) { }
 
     record AiPublic(boolean enabled) {}
+
+    record ExchangesPublic(boolean enabled) {}
 
     record ConfigsHash(String hash) {
     }

@@ -2,6 +2,7 @@ package app.finwave.backend.http;
 
 import app.finwave.backend.api.account.folder.AccountFolderApi;
 import app.finwave.backend.api.ai.AiApi;
+import app.finwave.backend.api.currency.excange.ExchangeApi;
 import app.finwave.backend.api.event.WebSocketHandler;
 import app.finwave.backend.api.files.FilesApi;
 import app.finwave.backend.api.server.ServerApi;
@@ -44,6 +45,7 @@ public class HttpWorker {
     protected AccountFolderApi accountFolderApi;
     protected AccountApi accountApi;
     protected CurrencyApi currencyApi;
+    protected ExchangeApi exchangeApi;
     protected TransactionApi transactionApi;
     protected CategoryApi categoryApi;
     protected RecurringTransactionApi recurringTransactionApi;
@@ -68,6 +70,7 @@ public class HttpWorker {
                       AccountFolderApi accountFolderApi,
                       AccountApi accountApi,
                       CurrencyApi currencyApi,
+                      ExchangeApi exchangeApi,
                       TransactionApi transactionApi,
                       CategoryApi categoryApi,
                       RecurringTransactionApi recurringTransactionApi,
@@ -90,6 +93,7 @@ public class HttpWorker {
         this.accountFolderApi = accountFolderApi;
         this.accountApi = accountApi;
         this.currencyApi = currencyApi;
+        this.exchangeApi = exchangeApi;
         this.transactionApi = transactionApi;
         this.categoryApi = categoryApi;
         this.analyticsApi = analyticsApi;
@@ -152,6 +156,10 @@ public class HttpWorker {
             });
 
             path("/currencies", () -> {
+                path("/exchange", () -> {
+                    get("/getExchangeRate", exchangeApi::getExchangeRate);
+                });
+
                 get("/getList", currencyApi::getCurrencies);
                 post("/new", currencyApi::newCurrency);
                 post("/editSymbol", currencyApi::editCurrencySymbol);

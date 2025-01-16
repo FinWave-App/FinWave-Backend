@@ -74,6 +74,14 @@ public class CurrencyDatabase extends AbstractDatabase {
                 .orElse(0);
     }
 
+    public Optional<String> getCurrencyCode(long currencyId) {
+        return context.select(CURRENCIES.CODE)
+                .from(CURRENCIES)
+                .where(CURRENCIES.ID.eq(currencyId))
+                .fetchOptional()
+                .map(Record1::component1);
+    }
+
     public boolean userCanReadCurrency(int userId, long currencyId) {
         return context.select(CURRENCIES.OWNER_ID)
                 .from(CURRENCIES)
