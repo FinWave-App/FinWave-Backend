@@ -124,7 +124,7 @@ public class SessionManager {
     }
 
     public void updateSessionLifetime(UsersSessionsRecord record) {
-        updateSessionLifetime(record.getUserId(), record.getUserId());
+        updateSessionLifetime(record.getId(), record.getUserId());
     }
 
     public boolean userOwnSession(int userId, long sessionId) {
