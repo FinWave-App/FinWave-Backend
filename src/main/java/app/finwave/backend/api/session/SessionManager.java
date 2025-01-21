@@ -116,6 +116,20 @@ public class SessionManager {
         listCache.invalidate(userId);
     }
 
+    public void deleteOverdueSessions() {
+        List<UsersSessionsRecord> removed = database.deleteOverdueSessions();
+
+        tokenCache.invalidateAll(removed.stream()
+                .map(UsersSessionsRecord::getToken)
+                .collect(Collectors.toList())
+        );
+
+        listCache.invalidateAll(removed.stream()
+                .map(UsersSessionsRecord::getUserId)
+                .collect(Collectors.toSet())
+        );
+    }
+
     public void updateSessionLifetime(long sessionId, int userId) {
         UsersSessionsRecord record = database.updateSessionLifetime(sessionId, config.userSessionsLifetimeDays);
 

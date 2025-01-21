@@ -1,6 +1,7 @@
 package app.finwave.backend.service.demo;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
@@ -16,6 +17,7 @@ import app.finwave.backend.service.AbstractService;
 
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class DemoService extends AbstractService {
     protected static final Logger log = LoggerFactory.getLogger(DemoService.class);
 

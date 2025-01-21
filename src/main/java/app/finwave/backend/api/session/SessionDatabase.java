@@ -66,4 +66,11 @@ public class SessionDatabase extends AbstractDatabase {
                 .where(USERS_SESSIONS.USER_ID.eq(userId))
                 .fetch();
     }
+
+    public List<UsersSessionsRecord> deleteOverdueSessions() {
+        return context.deleteFrom(USERS_SESSIONS)
+                .where(USERS_SESSIONS.EXPIRES_AT.lessThan(LocalDateTime.now()))
+                .returning()
+                .fetch();
+    }
 }
