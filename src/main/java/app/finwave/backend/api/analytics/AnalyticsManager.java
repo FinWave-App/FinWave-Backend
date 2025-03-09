@@ -165,14 +165,18 @@ public class AnalyticsManager {
 
     protected Pair<OffsetDateTime, OffsetDateTime> dateTypeToRange(short type, OffsetDateTime referenceDate) {
         OffsetDateTime thisMonthStart = referenceDate
-                .withDayOfMonth(1);
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
 
         OffsetDateTime thisMonthEnd = referenceDate
                 .withDayOfMonth(YearMonth.from(referenceDate).lengthOfMonth())
-                .plusHours(23)
-                .plusMinutes(59)
-                .plusSeconds(59)
-                .plusNanos(999999999);
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59)
+                .withNano(999999999);
 
         if (type == 0)
             return Pair.of(thisMonthStart, thisMonthEnd);
